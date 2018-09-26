@@ -27,11 +27,13 @@ type Interface struct {
 	Queries   []Query   `xml:"queries,omitempty"`
 	Package   string 	`xml:"-"`
 	EnableNil bool `xml:"-"`
+	Imports   []string `xml:"-"`
 	Dialect          string `xml:"-"`
 	Pks []Column `xml:"-"`
 	PkNum int64 `xml:"-"`
 	CommonColumns []Column `xml:"-"`
 	Version Column `xml:"-"`
+	ByteElementColumns []Column `xml:"-"`
 	InsertSql string `xml:"-"`
 	UpdateSql string `xml:"-"`
 	DeleteSql string `xml:"-"`
@@ -51,32 +53,36 @@ type Column struct {
 	ModifyTime bool   `xml:"modifyTime,attr,omitempty"`
 	Version    bool   `xml:"version,attr,omitempty"`
 	EnableNil  bool   `xml:"enableNil,attr,omitempty"`
+	Json bool `xml:"json,attr,omitempty"`
+	Xml bool `xml:"xml,attr,omitempty"`
 }
 
 type ExtraType struct {
 	EnumInterfaces []Enum `xml:"enum,omitempty"`
-	JsonInterfaces []Json `xml:"json,omitempty"`
-	Packages []string `xml:"package,omitempty"`
+	ElementInterfaces []Element `xml:"struct,omitempty"`
 }
 
 type Enum struct {
 	Id      string       `xml:"id,attr"`
 	Type 	string `xml:"-"`
 	MapType string       `xml:"mapType,attr"`
+	OptionType string `xml:"optionType,attr"`
 	Options []EnumOption `xml:"options"`
 }
 
 type EnumOption struct {
 	Value    string `xml:"value,attr"`
 	MapValue string `xml:"mapValue,attr"`
+	Default bool `xml:"default,attr"`
 }
 
-type Json struct {
+type Element struct {
 	Id     string      `xml:"id,attr"`
-	Fields []JsonField `xml:"fields"`
+	Fields []ElementField `xml:"fields"`
+	Type string `xml:"-"`
 }
 
-type JsonField struct {
+type ElementField struct {
 	MapName string `xml:"mapName,attr"`
 	MapType string `xml:"mapType,attr"`
 }

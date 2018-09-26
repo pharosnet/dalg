@@ -8,45 +8,32 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
-	"text/template"
 )
 
 
 
 func WriteTableFile(tableDef def.Interface, dir string) error {
-	tableDef.Pks = make([]def.Column, 0, 1)
-	tableDef.CommonColumns = make([]def.Column, 0, 1)
-	for _, col := range tableDef.Columns {
-		if col.Pk {
-			tableDef.Pks = append(tableDef.Pks, col)
-		} else if col.Version {
-			tableDef.Version = col
-		} else {
-			tableDef.CommonColumns = append(tableDef.CommonColumns, col)
-		}
-	}
-	tableDef.PkNum = int64(len(tableDef.Pks))
-	tpl, tplErr := template.New("_table").Parse(_tableTpl)
-	tpl.Funcs(map[string]interface{}{
-		"fup": func(s string) string {
-			bb := []byte(strings.TrimSpace(s))
-			a := strings.ToUpper(string(bb[0]))
-			bb[0] = []byte(a)[0]
-			return string(bb)
-		},
-		"flow": func(s string) string {
-			bb := []byte(strings.TrimSpace(s))
-			a := strings.ToLower(string(bb[0]))
-			bb[0] = []byte(a)[0]
-			return string(bb)
-		},
-	})
-	if tplErr != nil {
-		return tplErr
-	}
 
 	buffer := bytes.NewBuffer([]byte{})
-
+	// package
+	buffer.WriteString(fmt.Sprintf(`package %s\n`, tableDef.Package))
+	buffer.WriteByte('\n')
+	// imports
+	buffer.WriteString(`import (\n`)
+	buffer.WriteString(`\t"context"\n`)
+	buffer.WriteString(`\t"database/sql"\n`)
+	buffer.WriteString(`\t"database/sql/driver"\n`)
+	buffer.WriteString(`\t"errors"\n`)
+	buffer.WriteString(`\t"fmt"\n`)
+	for _, importPkg := range tableDef.Imports {
+		importPkg = strings.TrimSpace(importPkg)
+		if importPkg != "" {
+			buffer.WriteString(fmt.Sprintf(`\t"%s"\n`, importPkg))
+		}
+	}
+	buffer.WriteString(`)\n`)
+	buffer.WriteByte('\n')
+	// crud sql
 	tableName := strings.ToLower(strings.TrimSpace(tableDef.Name))
 	tableDef.Name = tableName
 	// sql, insert
@@ -65,13 +52,132 @@ func WriteTableFile(tableDef def.Interface, dir string) error {
 	if err := buildGetOneSql(&tableDef); err != nil {
 		return err
 	}
+	buffer.WriteString(`const (\n`)
+	buffer.WriteString(fmt.Sprintf(`\t%sInsertSql = %s\n`, strings.TrimSpace(strings.ToLower(tableDef.MapName)), fmt.Sprintf("`%s`", tableDef.InsertSql)))
+	buffer.WriteString(fmt.Sprintf(`\t%sUpdateSql = %s\n`, strings.TrimSpace(strings.ToLower(tableDef.MapName)), fmt.Sprintf("`%s`", tableDef.UpdateSql)))
+	buffer.WriteString(fmt.Sprintf(`\t%sDeleteSql = %s\n`, strings.TrimSpace(strings.ToLower(tableDef.MapName)), fmt.Sprintf("`%s`", tableDef.DeleteSql)))
+	buffer.WriteString(fmt.Sprintf(`\t%sGetOneSql = %s\n`, strings.TrimSpace(strings.ToLower(tableDef.MapName)), fmt.Sprintf("`%s`", tableDef.GetOneSql)))
+	buffer.WriteString(`)\n`)
+	buffer.WriteByte('\n')
 
-	// extra types
+	// extra
+	for _, extra := range tableDef.ExtraType.EnumInterfaces {
+		buffer.WriteString(fmt.Sprintf(`func New%s(v %s) %s {\n`, toCamel(extra.Id, true), extra.MapType, toCamel(extra.Id, true)))
+		buffer.WriteString(`\tok := false\n`)
+		buffer.WriteString(`\tswitch v {\n`)
+		quotaMark := ""
+		if extra.MapType == "string" {
+			quotaMark = `"`
+		}
+		valueQuotaMask := ""
+		if extra.OptionType == "string" {
+			valueQuotaMask = `"`
+		}
+		hasDefault := false
+		var defaultOption def.EnumOption
+		for _, option := range extra.Options {
+			buffer.WriteString(fmt.Sprintf(`\tcase %s%s%s:\n`, quotaMark, option.MapValue, quotaMark))
+			buffer.WriteString(`\t\tok = true\n`)
+			if option.Default {
+				hasDefault = true
+				defaultOption = option
+			}
+		}
+		buffer.WriteString(`\tif !ok {`)
+		if hasDefault {
+			buffer.WriteString(fmt.Sprintf(`\t\tv = %s%s%s\n`, quotaMark, defaultOption.MapValue, quotaMark))
+		} else {
+			buffer.WriteString(fmt.Sprintf(`\t\tpanic(fmt.Errorf("dal: new %s failed, value is invalid"))\n`, toCamel(extra.Id, true)))
+		}
+		buffer.WriteString(`\t}\n`)
+		buffer.WriteString(fmt.Sprintf(`\treturn %s{v, true}\n`, toCamel(extra.Id, true)))
+		buffer.WriteByte('\n')
 
+		// struct
+		buffer.WriteString(fmt.Sprintf(`type %s struct {\n`, toCamel(extra.Id, true)))
+		buffer.WriteString(fmt.Sprintf(`\t Value %s \n`, toType(extra.MapType)))
+		buffer.WriteString(`\tValid bool\n`)
+		buffer.WriteString(`}\n`)
+		buffer.WriteByte('\n')
+		// scan
+		buffer.WriteString(fmt.Sprintf(`func (n *%s) Scan(value interface{}) error {\n`, toCamel(extra.Id, true)))
+		buffer.WriteString(`\tif value == nil {\n`)
+		buffer.WriteString(`\tn.Valid = false\n`)
+		buffer.WriteString(`\treturn nil\n`)
+		buffer.WriteString(`\t}\n`)
 
-	if err := tpl.Execute(buffer, tableDef); err != nil {
-		return err
+		buffer.WriteString(fmt.Sprintf(`\t vv, ok := value.(%s) \n`, extra.OptionType))
+		buffer.WriteString(`\t if !ok { \n`)
+		buffer.WriteString(fmt.Sprintf(`\t\t return fmt.Errorf("dal: %s scan value failed, value type is not %s") \n`, toCamel(extra.Id, true), extra.OptionType))
+		buffer.WriteString(`\t}\n`)
+
+		buffer.WriteString(`\tswitch vv {\n`)
+		for _, option := range extra.Options {
+			buffer.WriteString(fmt.Sprintf(`\t\tcase %s%s%s:\n`, valueQuotaMask, option.Value, valueQuotaMask))
+			buffer.WriteString(fmt.Sprintf(`\t\t\tn.Value = %s%s%s\n`, quotaMark, option.MapValue, quotaMark))
+		}
+		if hasDefault {
+			buffer.WriteString(`\t\tdefault:\n`)
+			buffer.WriteString(fmt.Sprintf(`\t\t\tn.Value = %s%s%s\n`, quotaMark, defaultOption.MapValue, quotaMark))
+		} else {
+			buffer.WriteString(fmt.Sprintf(`\t\t default: \n \t\t\t return fmt.Errorf("dal: %s scan value failed, value is out of range") \n`, toCamel(extra.Id, true)))
+		}
+		buffer.WriteString(`\t}\n`)
+		buffer.WriteString(`\tn.Valid = true \n`)
+		buffer.WriteString(`\t return nil \n`)
+		buffer.WriteString(`}\n`)
+		buffer.WriteByte('\n')
+		// value
+		buffer.WriteString(fmt.Sprintf(`func (n %s) Value() (driver.Value, error) {\n`, toCamel(extra.Id, true)))
+		buffer.WriteString(`\t if !n.Valid { \n`)
+		buffer.WriteString(`\t\t return nil, nil \n`)
+		buffer.WriteString(`\t}\n`)
+
+		buffer.WriteString(`\t switch n.Value { \n`)
+		for _, option := range extra.Options {
+			buffer.WriteString(fmt.Sprintf(`\t case %s%s%s: \n`, quotaMark, option.MapValue, quotaMark))
+			buffer.WriteString(fmt.Sprintf(`\t\t return %s%s%s, nil \n`, valueQuotaMask, option.Value, valueQuotaMask))
+		}
+		if hasDefault {
+			buffer.WriteString(`\t default: \n`)
+			buffer.WriteString(fmt.Sprintf(`\t\t return %s%s%s, nil  \n`, valueQuotaMask, defaultOption.Value, valueQuotaMask))
+		}
+		buffer.WriteString(`\t}\n`)
+		buffer.WriteString(fmt.Sprintf(`\t return nil, fmt.Errorf("dal: %s value is invalid") \n`, toCamel(extra.Id, true)))
+		buffer.WriteString(`}\n`)
+
+		buffer.WriteByte('\n')
 	}
+
+	for _, extra := range tableDef.ExtraType.ElementInterfaces {
+		// TODO TREE MODEL -> MAKE FLAT MAP, THEN WRITING....
+		
+	}
+	buffer.WriteByte('\n')
+
+	// model
+
+	buffer.WriteByte('\n')
+
+	// insert
+
+	buffer.WriteByte('\n')
+
+	// update
+
+	buffer.WriteByte('\n')
+
+	// delete
+
+	buffer.WriteByte('\n')
+
+	// get one
+
+	buffer.WriteByte('\n')
+
+	// query
+
+	buffer.WriteByte('\n')
 
 	writeFileErr := ioutil.WriteFile(filepath.Join(dir, "table_" + tableName + ".go"), buffer.Bytes(), 0666)
 	if writeFileErr != nil {
@@ -281,352 +387,3 @@ func buildOracleGetOneSql(tableDef *def.Interface) error {
 // extra type
 
 
-var _tableTpl = `
-package {{.Package}}
-
-import (
-	"context"
-	"database/sql/driver"
-	"errors"
-	"fmt"
-	{{range .ExtraType.Packages}}
-	{{.}}
-	{{end}}
-)
-
-const (
-	_{{.Name}}InsertSql = ` + "`{{.InsertSql}}`" + `
-	_{{.Name}}UpdateSql = ` + "`{{.UpdateSql}}`" + `
-	_{{.Name}}DeleteSql = ` + "`{{.DeleteSql}}`" + `
-	_{{.Name}}GetOneSql = ` + "`{{.GetOneSql}}`" + `
-	//
-)
-
-{{range .ExtraType.EnumInterfaces}}
-
-func New{{fup .Id}}(v {{.MapType}}) {{fup .Id}} {
-	ok := false
-	switch v {
-	{{ if eq "string" {{.MapType}} }}
-	{{range .Options}}
-	case "{{.MapValue}}":
-		ok = true
-	{{end}}
-	{{ else if eq "byte" {{.MapType}} }}
-	{{range .Options}}
-	case '{{.MapValue}}':
-		ok = true
-	{{end}}
-	{{else}}
-	{{range .Options}}
-	case {{.MapValue}}:
-		ok = true
-	{{end}}
-	{{end}}
-	}
-	if !ok {
-		panic(fmt.Errorf("dal: new {{fup .Id}} failed, value is invalid"))
-	}
-	return {{fup .Id}}{v, true}
-}
-
-type {{fup .Id}} struct {
-	Value {{.MapType}}
-	Valid bool
-}
-
-func (n {{fup .Id}}) Scan(value interface{}) error {
-	if value == nil {
-		n.Valid = false
-		return nil
-	}
-	switch value.(type) {
-	case {{.MapType}}:
-		vv, ok := value.({{.MapType}})
-		if !ok {
-			return fmt.Errorf("dal: call {{.Id}}.scan() failed, value type is not {{.MapType}}")
-		}
-		switch vv {
-		{{if eq "string" {{.MapType}}}}
-		{{range .Options}}
-		case {{.Value}}:
-			n.Value = "{{.MapValue}}"
-		{{end}}
-		{{ else if eq "byte" {{.MapType}} }}
-		{{range .Options}}
-		case {{.Value}}:
-			n.Value = '{{.MapValue}}'
-		{{end}}
-		{{else}}
-		{{range .Options}}
-		case {{.Value}}:
-			n.Value = {{.MapValue}}
-		{{end}}
-		{{end}}
-		default:
-			return fmt.Errorf("dal: call {{.Id}}.scan() failed, value is out of range")
-		}
-		n.Valid = true
-	}
-	return nil
-}
-
-func (n {{fup .Id}}) Value() (driver.Value, error) {
-	if !n.Valid {
-		return nil, nil
-	}
-	switch n.Value {
-	{{if eq "string" {{.MapType}}}}
-	{{range .Options}}
-	case "{{.MapValue}}":
-		return true, nil
-	{{end}}
-	{{ else if eq "byte" {{.MapType}} }}
-	{{range .Options}}
-	case '{{.MapValue}}':
-		return true, nil
-	{{end}}
-	{{else}}
-	{{range .Options}}
-	case {{.MapValue}}:
-		return true, nil
-	{{end}}
-	{{end}}
-	}
-	return nil, fmt.Errorf("dal: call {{.Id}}.value() failed, value is out of range")
-}
-
-
-
-{{end}}
-
-func New{{fup .MapName}}({{range $i, $v := .Columns}} {{if gt $i 0}}, {{end}} {{flow $v.MapName}} {{$v.MapType}} {{end}}) *{{fup .MapName}} {
-	now := nowTime()
-	{{if eq true .EnableNil}}
-	return &{{fup .MapName}}{
-		{{range .Columns}}
-		{{fup .MapName}}: {{.MapType}}{ {{flow .MapName}}, true },
-		{{end}}
-	}
-	{{else}}
-	return &{{fup .MapName}}{
-		{{range .Columns}}
-		{{fup .MapName}}: {{flow .MapName}},
-		{{end}}
-	}
-	{{end}}
-}
-
-
-type {{fup .MapName}} struct {
-	{{range .Columns}}
-	{{fup .MapName}} {{.MapType}}
-	{{end}}
-}
-
-func (row *{{fup .MapName}}) Format(s fmt.State, verb rune) {
-	switch verb {
-	case 'v':
-		switch {
-		case s.Flag('+'):
-			fmt.Fprintf(s, "({{range $i, $v := .Columns}} {{if gt $i 0}}, {{end}} {{fup $v.MapName}}: %v {{end}})",
-				{{range $i, $v := .Columns}} {{if gt $i 0}}, {{end}} row.{{fup $v.MapName}} {{end}})
-		default:
-			fmt.Fprintf(s, "&{{{range $i, $v := .Columns}} {{if gt $i 0}}, {{end}} %v {{end}}}",
-				{{range $i, $v := .Columns}} {{if gt $i 0}}, {{end}} row.{{fup $v.MapName}} {{end}})
-		}
-	}
-}
-
-func scan{{fup .MapName}}(sa Scanable) (row *{{fup .MapName}}, err error) {
-	row = &{{fup .MapName}}{}
-	scanErr := sa.Scan({{range $i, $v := .Columns}} {{if gt $i 0}}, {{end}} &row.{{fup $v.MapName}} {{end}})
-	if scanErr != nil {
-		err = fmt.Errorf("dal: scan failed. reason: %v", scanErr)
-		return
-	}
-	return
-}
-
-type {{fup .MapName}}RangeFn func(ctx context.Context, row *{{fup .MapName}}, err error) error
-
-func Insert{{fup .MapName}}(ctx context.Context, rows ...*{{fup .MapName}}) (affected int64, err error) {
-	if ctx == nil {
-		err = errors.New("dal: insert {{fup .MapName}} failed, context is empty")
-		return
-	}
-	if rows == nil || len(rows) == 0 {
-		err = errors.New("dal: insert {{fup .MapName}} failed, row is empty")
-		return
-	}
-	stmt, prepareErr := prepare(ctx).PrepareContext(ctx, _{{.Name}}InsertSql)
-	if prepareErr != nil {
-		err = fmt.Errorf("dal: insert {{fup .MapName}} failed, prepared statement failed. reason: %v", prepareErr)
-		return
-	}
-	defer func() {
-		stmtCloseErr := stmt.Close()
-		if stmtCloseErr != nil {
-			err = fmt.Errorf("dal: insert {{fup .MapName}} failed, close prepare statement failed. reason: %v", stmtCloseErr)
-			return
-		}
-	}()
-	for _, row := range rows {
-		result, execErr :=  stmt.ExecContext(ctx, {{range $i, $v := .Columns}} {{if gt $i 0}}, {{end}} row.{{fup $v.MapName}}{{end}})
-		if execErr != nil {
-			err = fmt.Errorf("dal: insert {{fup .MapName}} failed, execute statement failed. reason: %v", execErr)
-			return
-		}
-		affectedRows, affectedErr :=  result.RowsAffected()
-		if affectedErr != nil {
-			err = fmt.Errorf("dal: insert {{fup .MapName}} failed, get rows affected failed. reason: %v", affectedErr)
-			return
-		}
-		if affectedRows == 0 {
-			err = errors.New("dal: insert {{fup .MapName}} failed, no rows affected")
-			return
-		}
-		affected = affected + affectedRows
-		{{if eq PkNum 0}}
-		{{if eq true .Pks[0].DbIncrement}}
-		id, getIdErr := result.LastInsertId()
-		if getIdErr != nil {
-			err = fmt.Errorf("dal: insert {{fup .MapName}} failed, get last insert id failed. reason: %v", getIdErr)
-			return
-		}
-		if id < 0 {
-			err = errors.New("dal: insert {{fup .MapName}} failed, get last insert id failed. id is invalid")
-			return
-		}
-		row.{{fup .Pks[0].MapName}} = id
-		{{end}}
-		{{end}}
-		if hasLog() {
-			logf("dal: insert {{fup .MapName}} success, sql : %s, row : %+v\n", _{{.Name}}InsertSql, row)
-		}
-	}
-	return
-}
-
-
-func Update{{fup .MapName}}(ctx context.Context, rows ...*{{fup .MapName}}) (affected int64, err error) {
-	if ctx == nil {
-		err = errors.New("dal: update {{fup .MapName}} failed, context is empty")
-		return
-	}
-	if rows == nil || len(rows) == 0 {
-		err = errors.New("dal: update {{fup .MapName}} failed, row is empty")
-		return
-	}
-	stmt, prepareErr := prepare(ctx).PrepareContext(ctx, _{{.Name}}UpdateSql)
-	if prepareErr != nil {
-		err = fmt.Errorf("dal: update {{fup .MapName}} failed, prepared statement failed. reason: %v", prepareErr)
-		return
-	}
-	defer func() {
-		stmtCloseErr := stmt.Close()
-		if stmtCloseErr != nil {
-			err = fmt.Errorf("dal: update {{fup .MapName}} failed, close prepare statement failed. reason: %v", stmtCloseErr)
-			return
-		}
-	}()
-	now := nowTime()
-	for _, row := range rows {
-		result, execErr :=  stmt.ExecContext(ctx, {{range .CommonColumns}} row.{{fup .MapName}}, {{end}} {{range .Pks}} row.{{fup .MapName}}, {{end}} row.{{fup .Version}})
-		if execErr != nil {
-			err = fmt.Errorf("dal: update {{fup .MapName}} failed, execute statement failed. reason: %v", execErr)
-			return
-		}
-		affectedRows, affectedErr :=  result.RowsAffected()
-		if affectedErr != nil {
-			err = fmt.Errorf("dal: update {{fup .MapName}} failed, get rows affected failed. reason: %v", affectedErr)
-			return
-		}
-		if affectedRows == 0 {
-			err = errors.New("dal: update {{fup .MapName}} failed, no rows affected")
-			return
-		}
-		affected = affected + affectedRows
-		if hasLog() {
-			logf("dal: update {{fup .MapName}} success, sql : %s, row : %+v\n", _{{.Name}}UpdateSql, row)
-		}
-		row.Version.Int64 ++
-	}
-	return
-}
-
-func Delete{{fup .MapName}}(ctx context.Context, rows ...*{{fup .MapName}}) (affected int64, err error) {
-	if ctx == nil {
-		err = errors.New("dal: delete {{fup .MapName}} failed, context is empty")
-		return
-	}
-	if rows == nil || len(rows) == 0 {
-		err = errors.New("dal: delete {{fup .MapName}} failed, row is empty")
-		return
-	}
-	stmt, prepareErr := prepare(ctx).PrepareContext(ctx, _{{.Name}}DeleteSql)
-	if prepareErr != nil {
-		err = fmt.Errorf("dal: delete {{fup .MapName}} failed, prepared statement failed. reason: %v", prepareErr)
-		return
-	}
-	defer func() {
-		stmtCloseErr := stmt.Close()
-		if stmtCloseErr != nil {
-			err = fmt.Errorf("dal: delete {{fup .MapName}} failed, close prepare statement failed. reason: %v", stmtCloseErr)
-			return
-		}
-	}()
-	for _, row := range rows {
-		result, execErr :=  stmt.ExecContext(ctx, {{range .Pks}} row.{{fup .MapName}}, {{end}} row.{{fup .Version}})
-		if execErr != nil {
-			err = fmt.Errorf("dal: delete {{fup .MapName}} failed, execute statement failed. reason: %v", execErr)
-			return
-		}
-		affectedRows, affectedErr :=  result.RowsAffected()
-		if affectedErr != nil {
-			err = fmt.Errorf("dal: delete {{fup .MapName}} failed, get rows affected failed. reason: %v", affectedErr)
-			return
-		}
-		if affectedRows == 0 {
-			err = errors.New("dal: delete {{fup .MapName}} failed, no rows affected")
-			return
-		}
-		affected = affected + affectedRows
-		if hasLog() {
-			logf("dal: delete {{fup .MapName}} success, sql : %s, row : %+v\n", _{{.Name}}DeleteSql, row)
-		}
-	}
-	return
-}
-
-func GetOne{{fup .MapName}}(ctx context.Context {{range .Pks}} , {{flow .MapName}} {{ .MapType}} {{end}}) (row *{{fup .MapName}}, err error) {
-	if ctx == nil {
-		err = errors.New("dal: load {{fup .MapName}} failed, context is empty")
-		return
-	}
-	if id == "" {
-		err = errors.New("dal: load {{fup .MapName}} failed, id is empty")
-		return
-	}
-	stmt, prepareErr := prepare(ctx).PrepareContext(ctx, _{{.Name}}GetOneSql)
-	if prepareErr != nil {
-		err = fmt.Errorf("dal: load {{fup .MapName}} failed, prepared statement failed. reason: %v", prepareErr)
-		return
-	}
-	defer func() {
-		stmtCloseErr := stmt.Close()
-		if stmtCloseErr != nil {
-			err = fmt.Errorf("dal: load {{fup .MapName}} failed, close prepare statement failed. reason: %v", stmtCloseErr)
-			return
-		}
-	}()
-	oriRow := stmt.QueryRowContext(ctx{{range .Pks}} , &{{flow .MapName}} {{end}})
-	row, err = scan{{fup .MapName}}(oriRow)
-	if hasLog() {
-		logf("dal: load {{fup .MapName}} success, sql : %s, id : %v, row : %+v\n", _{{.Name}}GetOneSql, id, userRow)
-	}
-	return
-}
-
-
-`

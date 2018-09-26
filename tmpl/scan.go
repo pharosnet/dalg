@@ -31,7 +31,7 @@ func nowTime() NullTime {
 	return NullTime{time.Now(), true}
 }
 
-func (n NullTime) Scan(value interface{}) error {
+func (n *NullTime) Scan(value interface{}) error {
 	if value == nil {
 		n.Time, n.Valid = time.Time{}, false
 		return nil
@@ -56,7 +56,7 @@ type NullJson struct {
 	Valid bool
 }
 
-func (n NullJson) Scan(value interface{}) error {
+func (n *NullJson) Scan(value interface{}) error {
 	if value == nil {
 		n.Bytes, n.Valid = nil, false
 		return nil
@@ -77,21 +77,6 @@ func (n NullJson) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return n.Bytes, nil
-}
-
-func (n NullJson) Marshal(v interface{}) (b []byte, err error) {
-	b, err = json.Marshal(v)
-	n.Valid = true
-	return
-}
-
-func (n NullJson) Unmarshal(v interface{}) (err error) {
-	if !n.Valid {
-		err = errors.New("unmarshal failed, value is invalid")
-		return
-	}
-	err = json.Unmarshal(n.Bytes, v)
-	return
 }
 
 `
