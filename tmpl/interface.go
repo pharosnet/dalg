@@ -20,30 +20,15 @@ func WriteInterfaces(dbDef *def.Db, dir string) error {
 		interfaceDef.Imports = make([]string, 0, 1)
 		if class == "table" {
 			interfaceDef.Dialect = dbDef.Dialect
-			interfaceDef.Pks = make([]def.Column, 0, 1)
-			interfaceDef.CommonColumns = make([]def.Column, 0, 1)
-			for _, col := range interfaceDef.Columns {
-				if col.Pk {
-					interfaceDef.Pks = append(interfaceDef.Pks, col)
-				} else if col.Version {
-					interfaceDef.Version = col
-				} else {
-					interfaceDef.CommonColumns = append(interfaceDef.CommonColumns, col)
-				}
-				if pos := strings.LastIndexByte(col.MapType, '.'); pos > 0 {
-					interfaceDef.Imports = append(interfaceDef.Imports, col.MapType[0:pos])
-				}
-			}
-			interfaceDef.PkNum = int64(len(interfaceDef.Pks))
 			if err := WriteTableOrViewFile(interfaceDef, dir); err != nil {
 				return err
 			}
-		} else if class == "view" {
-			for _, col := range interfaceDef.Columns {
-				if pos := strings.LastIndexByte(col.MapType, '.'); pos > 0 {
-					interfaceDef.Imports = append(interfaceDef.Imports, col.MapType[0:pos])
+			if dbDef.DDL {
+				if err := WriteSqlDDL(interfaceDef, dir); err != nil {
+					return err
 				}
 			}
+		} else if class == "view" {
 			if err := WriteTableOrViewFile(interfaceDef, dir); err != nil {
 				return err
 			}

@@ -8,6 +8,7 @@ type Db struct {
 	XMLName          xml.Name    `xml:"db"`
 	Package          string      `xml:"package,attr"`
 	Dialect          string      `xml:"dialect,attr"`
+	DDL 	bool `xml:"ddl,attr"`
 	//Driver           string      `xml:"driver,attr"`
 	//ConnMaxLifetime  string      `xml:"connMaxLifetime,attr,omitempty"`
 	//ConnMaxLifetimeV time.Duration      `xml:"-"`

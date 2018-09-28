@@ -14,6 +14,30 @@ import (
 
 func WriteTableOrViewFile(tableDef def.Interface, dir string) error {
 
+	if tableDef.Class == "table" {
+		tableDef.Pks = make([]def.Column, 0, 1)
+		tableDef.CommonColumns = make([]def.Column, 0, 1)
+		for _, col := range tableDef.Columns {
+			if col.Pk {
+				tableDef.Pks = append(tableDef.Pks, col)
+			} else if col.Version {
+				tableDef.Version = col
+			} else {
+				tableDef.CommonColumns = append(tableDef.CommonColumns, col)
+			}
+			if pos := strings.LastIndexByte(col.MapType, '.'); pos > 0 {
+				tableDef.Imports = append(tableDef.Imports, col.MapType[0:pos])
+			}
+		}
+		tableDef.PkNum = int64(len(tableDef.Pks))
+	} else if tableDef.Class == "view" {
+		for _, col := range tableDef.Columns {
+			if pos := strings.LastIndexByte(col.MapType, '.'); pos > 0 {
+				tableDef.Imports = append(tableDef.Imports, col.MapType[0:pos])
+			}
+		}
+	}
+
 	buffer := bytes.NewBuffer([]byte{})
 	// package
 	buffer.WriteString(fmt.Sprintf(`package %s\n`, tableDef.Package))
