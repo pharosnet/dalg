@@ -13,27 +13,27 @@ type Db struct {
 	//ConnMaxLifetimeV time.Duration      `xml:"-"`
 	//MaxIdleConns     int64       `xml:"maxIdleConns,attr,omitempty"`
 	//MaxOpenConns     int64       `xml:"maxOpenConns,attr,omitempty"`
-	EnableNil bool `xml:"enableNil"`
 	Interfaces       []Interface `xml:"interfaces"`
 }
 
 type Interface struct {
-	Type      string    `xml:"type,attr"`
+	Class      string    `xml:"class,attr"`
 	Schema    string    `xml:"schema,attr,omitempty"`
 	Name      string    `xml:"name,attr"`
 	MapName   string    `xml:"mapName,attr"`
-	Columns   []Column  `xml:"columns"`
-	ExtraType ExtraType `xml:"extraType,omitempty"`
+	Type string `xml:"type,attr,omitempty"`
+	MapType string `xml:"mapType,attr,omitempty"`
+	Columns   []Column  `xml:"columns,omitempty"`
+	Options []EnumOption `xml:"options,omitempty"`
+	Fields []Field `xml:"fields,omitempty"`
 	Queries   []Query   `xml:"queries,omitempty"`
 	Package   string 	`xml:"-"`
-	EnableNil bool `xml:"-"`
 	Imports   []string `xml:"-"`
 	Dialect          string `xml:"-"`
 	Pks []Column `xml:"-"`
 	PkNum int64 `xml:"-"`
 	CommonColumns []Column `xml:"-"`
 	Version Column `xml:"-"`
-	ByteElementColumns []Column `xml:"-"`
 	InsertSql string `xml:"-"`
 	UpdateSql string `xml:"-"`
 	DeleteSql string `xml:"-"`
@@ -57,32 +57,14 @@ type Column struct {
 	Xml bool `xml:"xml,attr,omitempty"`
 }
 
-type ExtraType struct {
-	EnumInterfaces []Enum `xml:"enum,omitempty"`
-	ElementInterfaces []Element `xml:"struct,omitempty"`
-}
-
-type Enum struct {
-	Id      string       `xml:"id,attr"`
-	Type 	string `xml:"-"`
-	MapType string       `xml:"mapType,attr"`
-	OptionType string `xml:"optionType,attr"`
-	Options []EnumOption `xml:"options"`
-}
-
 type EnumOption struct {
 	Value    string `xml:"value,attr"`
 	MapValue string `xml:"mapValue,attr"`
 	Default bool `xml:"default,attr"`
 }
 
-type Element struct {
-	Id     string      `xml:"id,attr"`
-	Fields []ElementField `xml:"fields"`
-	Type string `xml:"-"`
-}
-
-type ElementField struct {
+type Field struct {
+	Name string `xml:"name,attr"`
 	MapName string `xml:"mapName,attr"`
 	MapType string `xml:"mapType,attr"`
 }

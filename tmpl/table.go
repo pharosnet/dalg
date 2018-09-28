@@ -60,6 +60,7 @@ func WriteTableFile(tableDef def.Interface, dir string) error {
 	buffer.WriteString(`)\n`)
 	buffer.WriteByte('\n')
 
+	// todo move to global extra elements ... extra_enum.go extra_elements.go
 	// extra
 	for _, extra := range tableDef.ExtraType.EnumInterfaces {
 		buffer.WriteString(fmt.Sprintf(`func New%s(v %s) %s {\n`, toCamel(extra.Id, true), extra.MapType, toCamel(extra.Id, true)))
@@ -150,8 +151,8 @@ func WriteTableFile(tableDef def.Interface, dir string) error {
 	}
 
 	for _, extra := range tableDef.ExtraType.ElementInterfaces {
-		// TODO TREE MODEL -> MAKE FLAT MAP, THEN WRITING....
-		
+		// TODO TREE MODEL -> MAKE global FLAT MAP at interface, THEN WRITING....
+
 	}
 	buffer.WriteByte('\n')
 
