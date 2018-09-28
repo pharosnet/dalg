@@ -12,7 +12,7 @@ import (
 
 
 
-func WriteTableFile(tableDef def.Interface, dir string) error {
+func WriteTableOrViewFile(tableDef def.Interface, dir string) error {
 
 	buffer := bytes.NewBuffer([]byte{})
 	// package
@@ -25,66 +25,66 @@ func WriteTableFile(tableDef def.Interface, dir string) error {
 	buffer.WriteString(`\t"database/sql/driver"\n`)
 	buffer.WriteString(`\t"errors"\n`)
 	buffer.WriteString(`\t"fmt"\n`)
-	for _, importPkg := range tableDef.Imports {
-		importPkg = strings.TrimSpace(importPkg)
-		if importPkg != "" {
-			buffer.WriteString(fmt.Sprintf(`\t"%s"\n`, importPkg))
+	buffer.WriteString(importsCode(tableDef.Imports))
+	buffer.WriteString(`)\n`)
+	buffer.WriteByte('\n')
+
+	if tableDef.Class == "table" {
+		// crud sql
+		tableName := strings.ToLower(strings.TrimSpace(tableDef.Name))
+		tableDef.Name = tableName
+		// sql, insert
+		if err := buildInsertSql(&tableDef); err != nil {
+			return err
 		}
+		// sql, update
+		if err := buildUpdateSql(&tableDef); err != nil {
+			return err
+		}
+		// sql, delete
+		if err := buildDeleteSql(&tableDef); err != nil {
+			return err
+		}
+		// sql, get one
+		if err := buildGetOneSql(&tableDef); err != nil {
+			return err
+		}
+		buffer.WriteString(`const (\n`)
+		buffer.WriteString(fmt.Sprintf(`\t%sInsertSql = %s\n`, toCamel(tableDef.MapName, false), fmt.Sprintf("`%s`", tableDef.InsertSql)))
+		buffer.WriteString(fmt.Sprintf(`\t%sUpdateSql = %s\n`, toCamel(tableDef.MapName, false), fmt.Sprintf("`%s`", tableDef.UpdateSql)))
+		buffer.WriteString(fmt.Sprintf(`\t%sDeleteSql = %s\n`, toCamel(tableDef.MapName, false), fmt.Sprintf("`%s`", tableDef.DeleteSql)))
+		buffer.WriteString(fmt.Sprintf(`\t%sGetOneSql = %s\n`, toCamel(tableDef.MapName, false), fmt.Sprintf("`%s`", tableDef.GetOneSql)))
+		buffer.WriteString(`)\n`)
+		buffer.WriteByte('\n')
 	}
-	buffer.WriteString(`)\n`)
-	buffer.WriteByte('\n')
-	// crud sql
-	tableName := strings.ToLower(strings.TrimSpace(tableDef.Name))
-	tableDef.Name = tableName
-	// sql, insert
-	if err := buildInsertSql(&tableDef); err != nil {
-		return err
-	}
-	// sql, update
-	if err := buildUpdateSql(&tableDef); err != nil {
-		return err
-	}
-	// sql, delete
-	if err := buildDeleteSql(&tableDef); err != nil {
-		return err
-	}
-	// sql, get one
-	if err := buildGetOneSql(&tableDef); err != nil {
-		return err
-	}
-	buffer.WriteString(`const (\n`)
-	buffer.WriteString(fmt.Sprintf(`\t%sInsertSql = %s\n`, strings.TrimSpace(strings.ToLower(tableDef.MapName)), fmt.Sprintf("`%s`", tableDef.InsertSql)))
-	buffer.WriteString(fmt.Sprintf(`\t%sUpdateSql = %s\n`, strings.TrimSpace(strings.ToLower(tableDef.MapName)), fmt.Sprintf("`%s`", tableDef.UpdateSql)))
-	buffer.WriteString(fmt.Sprintf(`\t%sDeleteSql = %s\n`, strings.TrimSpace(strings.ToLower(tableDef.MapName)), fmt.Sprintf("`%s`", tableDef.DeleteSql)))
-	buffer.WriteString(fmt.Sprintf(`\t%sGetOneSql = %s\n`, strings.TrimSpace(strings.ToLower(tableDef.MapName)), fmt.Sprintf("`%s`", tableDef.GetOneSql)))
-	buffer.WriteString(`)\n`)
-	buffer.WriteByte('\n')
 
 	// model
 
 	buffer.WriteByte('\n')
 
-	// insert
+	if tableDef.Class == "table" {
+		// insert
 
-	buffer.WriteByte('\n')
+		buffer.WriteByte('\n')
 
-	// update
+		// update
 
-	buffer.WriteByte('\n')
+		buffer.WriteByte('\n')
 
-	// delete
+		// delete
 
-	buffer.WriteByte('\n')
+		buffer.WriteByte('\n')
 
-	// get one
+		// get one
 
-	buffer.WriteByte('\n')
+		buffer.WriteByte('\n')
+	}
 
 	// query
 
 	buffer.WriteByte('\n')
 
-	writeFileErr := ioutil.WriteFile(filepath.Join(dir, "table_" + tableName + ".go"), buffer.Bytes(), 0666)
+	writeFileErr := ioutil.WriteFile(filepath.Join(dir, strings.TrimSpace(strings.ToLower(tableDef.Class)) + "_" + strings.TrimSpace(strings.ToLower(tableDef.Name)) + ".go"), buffer.Bytes(), 0666)
 	if writeFileErr != nil {
 		return writeFileErr
 	}
@@ -289,6 +289,5 @@ func buildOracleGetOneSql(tableDef *def.Interface) error {
 	return nil
 }
 
-// extra type
 
 

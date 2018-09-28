@@ -35,7 +35,7 @@ func WriteInterfaces(dbDef *def.Db, dir string) error {
 				}
 			}
 			interfaceDef.PkNum = int64(len(interfaceDef.Pks))
-			if err := WriteTableFile(interfaceDef, dir); err != nil {
+			if err := WriteTableOrViewFile(interfaceDef, dir); err != nil {
 				return err
 			}
 		} else if class == "view" {
@@ -44,7 +44,7 @@ func WriteInterfaces(dbDef *def.Db, dir string) error {
 					interfaceDef.Imports = append(interfaceDef.Imports, col.MapType[0:pos])
 				}
 			}
-			if err := WriteViewFile(interfaceDef, dir); err != nil {
+			if err := WriteTableOrViewFile(interfaceDef, dir); err != nil {
 				return err
 			}
 		} else if class == "enum" {
@@ -87,7 +87,7 @@ func toCamel(src string, aheadUp bool) string {
 		if p[0] >= 97 && p[0] <= 122 {
 			p[0] = p[0] - 32
 		}
-		ss += string(p)
+		ss += strings.TrimSpace(string(p))
 	}
 	return ss
 }
