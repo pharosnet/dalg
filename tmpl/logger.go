@@ -1,15 +1,14 @@
 package tmpl
 
 import (
-	"bytes"
+	"fmt"
 	"github.com/pharosnet/dalg/def"
 	"io/ioutil"
 	"path/filepath"
-	"text/template"
 )
 
 var _logTpl = `
-package {{.Package}}
+package %s
 
 type Log interface {
 	Printf(formatter string, args ...interface{})
@@ -34,13 +33,6 @@ func logf(formatter string, args ...interface{})  {
 `
 
 func WriteLoggerFile(dbDef *def.Db, dir string) error {
-	tpl, tplErr := template.New("_logger").Parse(_logTpl)
-	if tplErr != nil {
-		return tplErr
-	}
-	buffer := bytes.NewBuffer([]byte{})
-	if err := tpl.Execute(buffer, dbDef); err != nil {
-		return err
-	}
-	return ioutil.WriteFile(filepath.Join(dir, "logger.go"), buffer.Bytes(), 0666)
+	code := fmt.Sprintf(_logTpl, dbDef.Package)
+	return ioutil.WriteFile(filepath.Join(dir, "logger.go"), []byte(code), 0666)
 }

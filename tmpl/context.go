@@ -1,36 +1,29 @@
 package tmpl
 
 import (
-	"bytes"
+	"fmt"
 	"github.com/pharosnet/dalg/def"
 	"io/ioutil"
 	"path/filepath"
-	"text/template"
 )
 
 var _contextTpl = `
-package {{.Package}}
+package %s
 
 import (
 	"context"
 	"database/sql"
-	_ "{{.Driver}}"
 )
 
 const (
 	ctxKeyPreparer = "preparer"
-	ctxKeyOperator = "operator"
 )
 
 type Preparer interface {
 	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
 }
 
-func WithOperator(parent context.Context, op string) context.Context {
-	return context.WithValue(parent, ctxKeyOperator, op)
-}
-
-func WithPreparer(parent context.Context, p Preparer) context.Context {
+func NewContext(parent context.Context, p Preparer) context.Context {
 	return context.WithValue(parent, ctxKeyPreparer, p)
 }
 
@@ -42,24 +35,9 @@ func prepare(ctx context.Context) Preparer {
 	return v.(Preparer)
 }
 
-func operator(ctx context.Context) string {
-	v := ctx.Value(ctxKeyOperator)
-	if v == nil {
-		return ""
-	}
-	return v.(string)
-}
-
 `
 
 func WriteContextFile(dbDef *def.Db, dir string) error {
-	tpl, tplErr := template.New("_context").Parse(_contextTpl)
-	if tplErr != nil {
-		return tplErr
-	}
-	buffer := bytes.NewBuffer([]byte{})
-	if err := tpl.Execute(buffer, dbDef); err != nil {
-		return err
-	}
-	return ioutil.WriteFile(filepath.Join(dir, "context.go"), buffer.Bytes(), 0666)
+	code := fmt.Sprintf(_contextTpl, dbDef.Package)
+	return ioutil.WriteFile(filepath.Join(dir, "context.go"), []byte(code), 0666)
 }
