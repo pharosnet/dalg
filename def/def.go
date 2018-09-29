@@ -47,6 +47,7 @@ type Column struct {
 	MapName    string `xml:"mapName,attr"`
 	MapType    string `xml:"mapType,attr"`
 	Pk         bool   `xml:"pk,attr,omitempty"`
+	Increment bool `xml:"increment,attr,omitempty"`
 	DbIncrement bool `xml:"dbIncrement"`
 	CreateBy   bool   `xml:"createBy,attr,omitempty"`
 	CreateTime bool   `xml:"createTime,attr,omitempty"`
