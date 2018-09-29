@@ -12,35 +12,35 @@ import (
 
 
 
-func WriteTableOrViewFile(tableDef def.Interface, dir string) error {
+func WriteTableOrViewFile(interfaceDef def.Interface, dir string) error {
 
-	if tableDef.Class == "table" {
-		tableDef.Pks = make([]def.Column, 0, 1)
-		tableDef.CommonColumns = make([]def.Column, 0, 1)
-		for _, col := range tableDef.Columns {
+	if interfaceDef.Class == "table" {
+		interfaceDef.Pks = make([]def.Column, 0, 1)
+		interfaceDef.CommonColumns = make([]def.Column, 0, 1)
+		for _, col := range interfaceDef.Columns {
 			if col.Pk {
-				tableDef.Pks = append(tableDef.Pks, col)
+				interfaceDef.Pks = append(interfaceDef.Pks, col)
 			} else if col.Version {
-				tableDef.Version = col
+				interfaceDef.Version = col
 			} else {
-				tableDef.CommonColumns = append(tableDef.CommonColumns, col)
+				interfaceDef.CommonColumns = append(interfaceDef.CommonColumns, col)
 			}
 			if pos := strings.LastIndexByte(col.MapType, '.'); pos > 0 {
-				tableDef.Imports = append(tableDef.Imports, col.MapType[0:pos])
+				interfaceDef.Imports = append(interfaceDef.Imports, col.MapType[0:pos])
 			}
 		}
-		tableDef.PkNum = int64(len(tableDef.Pks))
-	} else if tableDef.Class == "view" {
-		for _, col := range tableDef.Columns {
+		interfaceDef.PkNum = int64(len(interfaceDef.Pks))
+	} else if interfaceDef.Class == "view" {
+		for _, col := range interfaceDef.Columns {
 			if pos := strings.LastIndexByte(col.MapType, '.'); pos > 0 {
-				tableDef.Imports = append(tableDef.Imports, col.MapType[0:pos])
+				interfaceDef.Imports = append(interfaceDef.Imports, col.MapType[0:pos])
 			}
 		}
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
 	// package
-	buffer.WriteString(fmt.Sprintf(`package %s\n`, tableDef.Package))
+	buffer.WriteString(fmt.Sprintf(`package %s\n`, interfaceDef.Package))
 	buffer.WriteByte('\n')
 	// imports
 	buffer.WriteString(`import (\n`)
@@ -49,53 +49,53 @@ func WriteTableOrViewFile(tableDef def.Interface, dir string) error {
 	buffer.WriteString(`\t"database/sql/driver"\n`)
 	buffer.WriteString(`\t"errors"\n`)
 	buffer.WriteString(`\t"fmt"\n`)
-	buffer.WriteString(importsCode(tableDef.Imports))
+	buffer.WriteString(importsCode(interfaceDef.Imports))
 	buffer.WriteString(`)\n`)
 	buffer.WriteByte('\n')
 
-	if tableDef.Class == "table" {
+	if interfaceDef.Class == "table" {
 		// crud sql
-		tableName := strings.ToLower(strings.TrimSpace(tableDef.Name))
-		tableDef.Name = tableName
+		tableName := strings.ToLower(strings.TrimSpace(interfaceDef.Name))
+		interfaceDef.Name = tableName
 		// sql, insert
-		if err := buildInsertSql(&tableDef); err != nil {
+		if err := buildInsertSql(&interfaceDef); err != nil {
 			return err
 		}
 		// sql, update
-		if err := buildUpdateSql(&tableDef); err != nil {
+		if err := buildUpdateSql(&interfaceDef); err != nil {
 			return err
 		}
 		// sql, delete
-		if err := buildDeleteSql(&tableDef); err != nil {
+		if err := buildDeleteSql(&interfaceDef); err != nil {
 			return err
 		}
 		// sql, get one
-		if err := buildGetOneSql(&tableDef); err != nil {
+		if err := buildGetOneSql(&interfaceDef); err != nil {
 			return err
 		}
 		buffer.WriteString(`const (\n`)
-		buffer.WriteString(fmt.Sprintf(`\t%sInsertSql = %s\n`, toCamel(tableDef.MapName, false), fmt.Sprintf("`%s`", tableDef.InsertSql)))
-		buffer.WriteString(fmt.Sprintf(`\t%sUpdateSql = %s\n`, toCamel(tableDef.MapName, false), fmt.Sprintf("`%s`", tableDef.UpdateSql)))
-		buffer.WriteString(fmt.Sprintf(`\t%sDeleteSql = %s\n`, toCamel(tableDef.MapName, false), fmt.Sprintf("`%s`", tableDef.DeleteSql)))
-		buffer.WriteString(fmt.Sprintf(`\t%sGetOneSql = %s\n`, toCamel(tableDef.MapName, false), fmt.Sprintf("`%s`", tableDef.GetOneSql)))
+		buffer.WriteString(fmt.Sprintf(`\t%sInsertSql = %s\n`, toCamel(interfaceDef.MapName, false), fmt.Sprintf("`%s`", interfaceDef.InsertSql)))
+		buffer.WriteString(fmt.Sprintf(`\t%sUpdateSql = %s\n`, toCamel(interfaceDef.MapName, false), fmt.Sprintf("`%s`", interfaceDef.UpdateSql)))
+		buffer.WriteString(fmt.Sprintf(`\t%sDeleteSql = %s\n`, toCamel(interfaceDef.MapName, false), fmt.Sprintf("`%s`", interfaceDef.DeleteSql)))
+		buffer.WriteString(fmt.Sprintf(`\t%sGetOneSql = %s\n`, toCamel(interfaceDef.MapName, false), fmt.Sprintf("`%s`", interfaceDef.GetOneSql)))
 		buffer.WriteString(`)\n`)
 		buffer.WriteByte('\n')
 	}
 
 	// model
-	buffer.WriteString(fmt.Sprintf(`type %s struct {\n `, toCamel(tableDef.MapName, true)))
-	for _, col := range tableDef.Columns {
+	buffer.WriteString(fmt.Sprintf(`type %s struct {\n `, toCamel(interfaceDef.MapName, true)))
+	for _, col := range interfaceDef.Columns {
 		buffer.WriteString(fmt.Sprintf(`\t%s %s \n`, toCamel(col.MapName, true), strings.TrimSpace(col.MapType)))
 	}
 	buffer.WriteString(`}\n`)
 	buffer.WriteByte('\n')
-	buffer.WriteString(fmt.Sprintf(`func (row *%s) Format(s fmt.State, verb rune) { \n`, toCamel(tableDef.MapName, true)))
+	buffer.WriteString(fmt.Sprintf(`func (row *%s) Format(s fmt.State, verb rune) { \n`, toCamel(interfaceDef.MapName, true)))
 	buffer.WriteString(`\t switch verb { \n`)
 	buffer.WriteString(`\t case 'v': \n`)
 	buffer.WriteString(`\t\t switch { \n`)
 	buffer.WriteString(`\t\t case s.Flag('+'): \n`)
 	buffer.WriteString(`\t\t\t fmt.Fprintf(s, "(`)
-	for i, col := range tableDef.Columns {
+	for i, col := range interfaceDef.Columns {
 		if i > 0 {
 			buffer.WriteString(`, `)
 		}
@@ -104,7 +104,7 @@ func WriteTableOrViewFile(tableDef def.Interface, dir string) error {
 
 	}
 	buffer.WriteString(`)",\n \t\t\t\t`)
-	for i, col := range tableDef.Columns {
+	for i, col := range interfaceDef.Columns {
 		if i > 0 {
 			buffer.WriteString(`, `)
 		}
@@ -114,7 +114,7 @@ func WriteTableOrViewFile(tableDef def.Interface, dir string) error {
 	buffer.WriteString(`)\n`)
 	buffer.WriteString(`\t\t default:\n`)
 	buffer.WriteString(`\t\t\t fmt.Fprintf(s, "&{`)
-	for i, _ := range tableDef.Columns {
+	for i, _ := range interfaceDef.Columns {
 		if i > 0 {
 			buffer.WriteString(`, `)
 		}
@@ -123,7 +123,7 @@ func WriteTableOrViewFile(tableDef def.Interface, dir string) error {
 
 	buffer.WriteString(`}",\n`)
 	buffer.WriteString(`\t\t\t\t`)
-	for i, col := range tableDef.Columns {
+	for i, col := range interfaceDef.Columns {
 		if i > 0 {
 			buffer.WriteString(`, `)
 		}
@@ -137,10 +137,10 @@ func WriteTableOrViewFile(tableDef def.Interface, dir string) error {
 
 	buffer.WriteByte('\n')
 
-	buffer.WriteString(fmt.Sprintf(`func scan%s(sa scanner) (row *%s, err error) {\n`, toCamel(tableDef.MapName, true), toCamel(tableDef.MapName, true)))
-	buffer.WriteString(fmt.Sprintf(`\trow = &%s{}\n`, toCamel(tableDef.MapName, true)))
+	buffer.WriteString(fmt.Sprintf(`func scan%s(sa scanner) (row *%s, err error) {\n`, toCamel(interfaceDef.MapName, true), toCamel(interfaceDef.MapName, true)))
+	buffer.WriteString(fmt.Sprintf(`\trow = &%s{}\n`, toCamel(interfaceDef.MapName, true)))
 	buffer.WriteString(`\t scanErr := sa.Scan( \n`)
-	for _, col := range tableDef.Columns {
+	for _, col := range interfaceDef.Columns {
 		buffer.WriteString(fmt.Sprintf(`\t\t\t &row.%s ,\n`, toCamel(col.MapName, true)))
 	}
 	buffer.WriteString(`\t\t)\n`)
@@ -153,39 +153,39 @@ func WriteTableOrViewFile(tableDef def.Interface, dir string) error {
 
 	buffer.WriteByte('\n')
 
-	buffer.WriteString(fmt.Sprintf(`type %sRangeFn func(ctx context.Context, row *%s, err error) error \n`, toCamel(tableDef.MapName, true), toCamel(tableDef.MapName, true)))
+	buffer.WriteString(fmt.Sprintf(`type %sRangeFn func(ctx context.Context, row *%s, err error) error \n`, toCamel(interfaceDef.MapName, true), toCamel(interfaceDef.MapName, true)))
 
 	buffer.WriteByte('\n')
 
-	// crud todo
-	if tableDef.Class == "table" {
+	// crud
+	if interfaceDef.Class == "table" {
 		// insert
-		buffer.WriteString(fmt.Sprintf(`func Insert%s(ctx context.Context, rows ...*%s) (affected int64, err error) { \n`, toCamel(tableDef.MapName, true), toCamel(tableDef.MapName, true)))
+		buffer.WriteString(fmt.Sprintf(`func Insert%s(ctx context.Context, rows ...*%s) (affected int64, err error) { \n`, toCamel(interfaceDef.MapName, true), toCamel(interfaceDef.MapName, true)))
 		buffer.WriteString(`\t if ctx == nil { \n`)
-		buffer.WriteString(fmt.Sprintf(`\t\t err = errors.New("dal: insert %s failed, context is empty") \n`, toCamel(tableDef.MapName, true)))
+		buffer.WriteString(fmt.Sprintf(`\t\t err = errors.New("dal: insert %s failed, context is empty") \n`, toCamel(interfaceDef.MapName, true)))
 		buffer.WriteString(`\t\t return \n`)
 		buffer.WriteString(`\t\ } \n`)
 		buffer.WriteString(`\t if rows == nil || len(rows) == 0 { \n`)
-		buffer.WriteString(fmt.Sprintf(`\t\t err = errors.New("dal: insert %s failed, row is empty") \n`, toCamel(tableDef.MapName, true)))
+		buffer.WriteString(fmt.Sprintf(`\t\t err = errors.New("dal: insert %s failed, row is empty") \n`, toCamel(interfaceDef.MapName, true)))
 		buffer.WriteString(`\t\t return \n`)
 		buffer.WriteString(`\t\ } \n`)
-		buffer.WriteString(fmt.Sprintf(`\t stmt, prepareErr := prepare(ctx).PrepareContext(ctx, %sInsertSql) \n`, toCamel(tableDef.MapName, false)))
+		buffer.WriteString(fmt.Sprintf(`\t stmt, prepareErr := prepare(ctx).PrepareContext(ctx, %sInsertSql) \n`, toCamel(interfaceDef.MapName, false)))
 		buffer.WriteString(`\t if prepareErr != nil { \n`)
-		buffer.WriteString(fmt.Sprintf(`\t\t err = fmt.Errorf("dal: insert %s failed, prepared statment failed. reason: %s", prepareErr) \n`, toCamel(tableDef.MapName, true), "%v"))
+		buffer.WriteString(fmt.Sprintf(`\t\t err = fmt.Errorf("dal: insert %s failed, prepared statment failed. reason: %s", prepareErr) \n`, toCamel(interfaceDef.MapName, true), "%v"))
 		buffer.WriteString(`\t\t return \n`)
 		buffer.WriteString(`\t\ } \n`)
 
 		buffer.WriteString(`\t defer func() { \n`)
 		buffer.WriteString(`\t\t stmtCloseErr := stmt.Close() \n`)
 		buffer.WriteString(`\t\t if stmtCloseErr != nil { \n`)
-		buffer.WriteString(fmt.Sprintf(`\t\t\t err = fmt.Errorf("dal: insert %s failed, close prepare statment failed. reason: %s", stmtCloseErr) \n`, toCamel(tableDef.MapName, true), "%v"))
+		buffer.WriteString(fmt.Sprintf(`\t\t\t err = fmt.Errorf("dal: insert %s failed, close prepare statment failed. reason: %s", stmtCloseErr) \n`, toCamel(interfaceDef.MapName, true), "%v"))
 		buffer.WriteString(`\t\t\t return \n`)
 		buffer.WriteString(`\t\t } \n`)
 		buffer.WriteString(`\t }() \n`)
 
 		buffer.WriteString(`\t for _, row := range rows { \n`)
 		buffer.WriteString(`\t\t result, execErr :=  stmt.ExecContext(ctx, `)
-		for i, col := range tableDef.Columns {
+		for i, col := range interfaceDef.Columns {
 			if i > 0 {
 				buffer.WriteString(`, `)
 			}
@@ -194,40 +194,40 @@ func WriteTableOrViewFile(tableDef def.Interface, dir string) error {
 		buffer.WriteString(`)\n`)
 
 		buffer.WriteString(`\t\t if execErr != nil { \n`)
-		buffer.WriteString(fmt.Sprintf(`\t\t\t err = fmt.Errorf("dal: insert %s failed, execute statment failed. reason: %s", execErr)\n`, toCamel(tableDef.MapName, true), "%v"))
+		buffer.WriteString(fmt.Sprintf(`\t\t\t err = fmt.Errorf("dal: insert %s failed, execute statment failed. reason: %s", execErr)\n`, toCamel(interfaceDef.MapName, true), "%v"))
 		buffer.WriteString(`\t\t\t return \n`)
 		buffer.WriteString(`\t\t } \n`)
 
 		buffer.WriteString(`\t\t affectedRows, affectedErr :=  result.RowsAffected() \n`)
 		buffer.WriteString(`\t\t if affectedErr != nil { \n`)
-		buffer.WriteString(fmt.Sprintf(`\t\t\t err = fmt.Errorf("dal: insert %s failed, get rows affected failed. reason: %s", affectedErr) \n`, toCamel(tableDef.MapName, true), "%v"))
+		buffer.WriteString(fmt.Sprintf(`\t\t\t err = fmt.Errorf("dal: insert %s failed, get rows affected failed. reason: %s", affectedErr) \n`, toCamel(interfaceDef.MapName, true), "%v"))
 		buffer.WriteString(`\t\t\t return \n`)
 		buffer.WriteString(`\t\t } \n`)
 
 		buffer.WriteString(`\t\t if affectedRows == 0 { \n`)
-		buffer.WriteString(fmt.Sprintf(`\t\t\t err = errors.New("dal: insert %s failed, no rows affected") \n`, toCamel(tableDef.MapName, true)))
+		buffer.WriteString(fmt.Sprintf(`\t\t\t err = errors.New("dal: insert %s failed, no rows affected") \n`, toCamel(interfaceDef.MapName, true)))
 		buffer.WriteString(`\t\t\t return \n`)
 		buffer.WriteString(`\t\t } \n`)
 
 		buffer.WriteString(`\t\t affected = affected + affectedRows \n`)
-		if len(tableDef.Pks) == 1 && tableDef.Pks[0].Increment {
-			buffer.WriteString(fmt.Sprintf(`\t\t %s, get%sErr := result.LastInsertId() \n`, toCamel(tableDef.Pks[0].MapName, false), toCamel(tableDef.Pks[0].MapName, true)))
-			buffer.WriteString(fmt.Sprintf(`\t\t if get%sErr != nil { \n`, toCamel(tableDef.Pks[0].MapName, true)))
+		if len(interfaceDef.Pks) == 1 && interfaceDef.Pks[0].Increment {
+			buffer.WriteString(fmt.Sprintf(`\t\t %s, get%sErr := result.LastInsertId() \n`, toCamel(interfaceDef.Pks[0].MapName, false), toCamel(interfaceDef.Pks[0].MapName, true)))
+			buffer.WriteString(fmt.Sprintf(`\t\t if get%sErr != nil { \n`, toCamel(interfaceDef.Pks[0].MapName, true)))
 			buffer.WriteString(fmt.Sprintf(`\t\t\t err = fmt.Errorf("dal: insert %s failed, get last insert pk failed. reason: %s", get%sErr) \n`,
-				toCamel(tableDef.MapName, true), "%v", toCamel(tableDef.Pks[0].MapName, true)))
+				toCamel(interfaceDef.MapName, true), "%v", toCamel(interfaceDef.Pks[0].MapName, true)))
 			buffer.WriteString(`\t\t\t return \n`)
 			buffer.WriteString(`\t\t } \n`)
-			buffer.WriteString(fmt.Sprintf(`\t\t if %s < 0 { \n`, toCamel(tableDef.Pks[0].MapName, false)))
-			buffer.WriteString(fmt.Sprintf(`\t\t\t err = errors.New("dal: insert %s failed, get last insert pk failed. pk is invalid") \n`, toCamel(tableDef.MapName, true)))
+			buffer.WriteString(fmt.Sprintf(`\t\t if %s < 0 { \n`, toCamel(interfaceDef.Pks[0].MapName, false)))
+			buffer.WriteString(fmt.Sprintf(`\t\t\t err = errors.New("dal: insert %s failed, get last insert pk failed. pk is invalid") \n`, toCamel(interfaceDef.MapName, true)))
 			buffer.WriteString(`\t\t\t return \n`)
 			buffer.WriteString(`\t\t } \n`)
-			buffer.WriteString(fmt.Sprintf(`\r\r row.%s = %s \n `, toCamel(tableDef.Pks[0].MapName, true), toCamel(tableDef.Pks[0].MapName, false)))
+			buffer.WriteString(fmt.Sprintf(`\r\r row.%s = %s \n `, toCamel(interfaceDef.Pks[0].MapName, true), toCamel(interfaceDef.Pks[0].MapName, false)))
 			buffer.WriteByte('\n')
 		}
 
 		buffer.WriteString(`\t\t if hasLog() { \n`)
 		buffer.WriteString(fmt.Sprintf(`\t\t\t logf("dal: insert %s success, sql : %s, row : %s\n", %sInsertSql, row) \n`,
-			toCamel(tableDef.MapName, true), "%+v", toCamel(tableDef.MapName, false)))
+			toCamel(interfaceDef.MapName, true), "%+v", toCamel(interfaceDef.MapName, false)))
 		buffer.WriteString(`\t\t } \n`)
 		buffer.WriteString(`\t} \n`)
 		buffer.WriteString(`\t return \n`)
@@ -235,15 +235,15 @@ func WriteTableOrViewFile(tableDef def.Interface, dir string) error {
 
 		buffer.WriteByte('\n')
 
-		// update
+		// update todo
 
 		buffer.WriteByte('\n')
 
-		// delete
+		// delete todo
 
 		buffer.WriteByte('\n')
 
-		// get one
+		// get one todo
 
 		buffer.WriteByte('\n')
 	}
@@ -252,7 +252,7 @@ func WriteTableOrViewFile(tableDef def.Interface, dir string) error {
 
 	buffer.WriteByte('\n')
 
-	writeFileErr := ioutil.WriteFile(filepath.Join(dir, strings.TrimSpace(strings.ToLower(tableDef.Class)) + "_" + strings.TrimSpace(strings.ToLower(tableDef.Name)) + ".go"), buffer.Bytes(), 0666)
+	writeFileErr := ioutil.WriteFile(filepath.Join(dir, strings.TrimSpace(strings.ToLower(interfaceDef.Class)) + "_" + strings.TrimSpace(strings.ToLower(interfaceDef.Name)) + ".go"), buffer.Bytes(), 0666)
 	if writeFileErr != nil {
 		return writeFileErr
 	}
