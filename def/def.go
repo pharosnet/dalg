@@ -72,6 +72,7 @@ type Field struct {
 }
 
 type Query struct {
+	MapName string `xml:"mapName,attr"`
 	Args   []QueryArg `xml:"args"`
 	Result string     `xml:"result,attr"`
 	Sql    Sql        `xml:"sql"`
