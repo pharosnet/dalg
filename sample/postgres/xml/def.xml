@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<db
+        package=""
+        dialect=""
+        driver=""
+        connMaxLifetime="2s"
+        maxIdleConns=""
+        maxOpenConns=""
+        >
+    <interface class="table" schema="" name="" mapName="" >
+        <column name="" type="" mapName="" mapType="" pk="true" increment="true" />
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="" json="" />
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="time.Time" createBy="" />
+        <column name="" type="" mapName="" mapType="NullTime" createTime="" />
+        <column name="" type="" mapName="" mapType="" modifyBy="" />
+        <column name="" type="" mapName="" mapType="" modifyTime=""/>
+        <column name="" type="" mapName="" mapType="" version="" />
+        <query mapName="" result="list|one|int64">
+            <arg mapName="" mapType="" />
+            <arg mapName="" mapType="" />
+            <sql>
+                <![CDATA[
+
+                ]]>
+            </sql>
+        </query>
+    </interface>
+    <interface class="json" mapName="" >
+        <field mapName="" mapType="" />
+        <field mapName="" mapType="" />
+        <field mapName="" mapType="" />
+    </interface>
+    <interface class="enum" mapName="" mapType="" type="bool"  >
+        <option value="" mapValue="" default="" />
+        <option value="" mapValue="" />
+    </interface>
+    <interface class="view" schema="" name="" mapName="" >
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="" />
+        <column name="" type="" mapName="" mapType="" />
+        <extraType>
+            <enum id="UserSex" >
+                <option mapName="" mapType="" />
+                <option mapName="" mapType="" />
+            </enum>
+            <json id="UserInfo" >
+                <field mapName="" mapType="" />
+                <field mapName="" mapType="" />
+                <field mapName="" mapType="" />
+            </json>
+        </extraType>
+        <query mapName="" result="list|one|int64">
+            <arg mapName="" mapType="" />
+            <arg mapName="" mapType="" />
+            <sql>
+                <![CDATA[
+
+                ]]>
+            </sql>
+        </query>
+    </interface>
+
+
+</db>

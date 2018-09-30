@@ -145,7 +145,7 @@ func WriteTableOrViewFile(interfaceDef def.Interface, dir string) error {
 	}
 	buffer.WriteString(`\t\t)\n`)
 	buffer.WriteString(`\t if scanErr != nil { \n`)
-	buffer.WriteString(`\t\t err = fmt.Errorf("dal-> scan failed. reason: %v", scanErr) \n`)
+	buffer.WriteString(fmt.Sprintf(`\t\t err = fmt.Errorf("dal-> %s scan failed. reason: %s", scanErr) \n`, toCamel(interfaceDef.MapName, true), "%v"))
 	buffer.WriteString(`\t\t return \n`)
 	buffer.WriteString(`\t } \n`)
 	buffer.WriteString(`\t return \n`)
@@ -153,7 +153,9 @@ func WriteTableOrViewFile(interfaceDef def.Interface, dir string) error {
 
 	buffer.WriteByte('\n')
 
-	buffer.WriteString(fmt.Sprintf(`type %sRangeFn func(ctx context.Context, row *%s, err error) error \n`, toCamel(interfaceDef.MapName, true), toCamel(interfaceDef.MapName, true)))
+	if len(interfaceDef.Queries) > 0 {
+		buffer.WriteString(fmt.Sprintf(`type %sRangeFn func(ctx context.Context, row *%s, err error) error \n`, toCamel(interfaceDef.MapName, true), toCamel(interfaceDef.MapName, true)))
+	}
 
 	buffer.WriteByte('\n')
 
@@ -308,7 +310,7 @@ func WriteTableOrViewFile(interfaceDef def.Interface, dir string) error {
 
 		buffer.WriteByte('\n')
 
-		// delete todo
+		// delete
 		buffer.WriteString(fmt.Sprintf(`func Delete%s(ctx context.Context, rows ...*%s) (affected int64, err error) { \n`, toCamel(interfaceDef.MapName, true), toCamel(interfaceDef.MapName, true)))
 		buffer.WriteString(`\t if ctx == nil { \n`)
 		buffer.WriteString(fmt.Sprintf(`\t\t err = errors.New("dal-> delete %s failed, context is empty") \n`, toCamel(interfaceDef.MapName, true)))
@@ -416,7 +418,7 @@ func WriteTableOrViewFile(interfaceDef def.Interface, dir string) error {
 		buffer.WriteByte('\n')
 	}
 
-	// query todo
+	// query
 	for _, query := range interfaceDef.Queries {
 		queryName := toCamel(interfaceDef.MapName, false) + toCamel(query.MapName, true)
 		buffer.WriteString(fmt.Sprintf(`const %sSql = %s \n`, queryName, fmt.Sprintf("`%s`", strings.Replace(query.Sql.Value, "\n", "", -1))))
@@ -489,8 +491,6 @@ func WriteTableOrViewFile(interfaceDef def.Interface, dir string) error {
 
 		buffer.WriteByte('\n')
 	}
-
-	buffer.WriteByte('\n')
 
 	writeFileErr := ioutil.WriteFile(filepath.Join(dir, strings.TrimSpace(strings.ToLower(interfaceDef.Class)) + "_" + strings.TrimSpace(strings.ToLower(interfaceDef.Name)) + ".go"), buffer.Bytes(), 0666)
 	if writeFileErr != nil {
