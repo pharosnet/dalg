@@ -9,8 +9,8 @@ import (
 )
 
 func WriteInterfaces(dbDef *def.Db, dir string) error {
-	enums := make([]def.Interface, 0, 1)
-	jsons := make([]def.Interface, 0, 1)
+	enums := make([]def.Interface, 0, 8)
+	jsons := make([]def.Interface, 0, 8)
 	for _, interfaceDef := range dbDef.Interfaces {
 		class := strings.ToLower(strings.TrimSpace(interfaceDef.Class))
 		if class == "" {
@@ -44,8 +44,9 @@ func WriteInterfaces(dbDef *def.Db, dir string) error {
 				}
 			}
 			jsons = append(jsons, interfaceDef)
+		} else {
+			return fmt.Errorf("invalid interface class, %s", class)
 		}
-		return fmt.Errorf("invalid interface class, %s", class)
 	}
 	if len(enums) > 0 {
 		if err := WriteEnumFile(enums, dir); err != nil {
@@ -65,14 +66,18 @@ func toCamel(src string, aheadUp bool) string {
 	ss := ""
 	for i, slice := range slices {
 		p := []byte(slice)
-		if aheadUp && i == 0 && p[0] >= 97 && p[0] <= 122 {
-			ss += string(p)
-			continue
+		if i == 0 {
+			if aheadUp && p[0] >= 97 && p[0] <= 122 {
+				p[0] = p[0] - 32
+			} else if !aheadUp && p[0] >= 65 && p[0] <= 90 {
+				p[0] = p[0] + 32
+			}
+		} else {
+			if p[0] >= 97 && p[0] <= 122 {
+				p[0] = p[0] - 32
+			}
 		}
-		if p[0] >= 97 && p[0] <= 122 {
-			p[0] = p[0] - 32
-		}
-		ss += strings.TrimSpace(string(p))
+		ss += string(p)
 	}
 	return ss
 }
@@ -96,8 +101,8 @@ func importsCode(imports []string) string {
 	buffer := bytes.NewBuffer([]byte{})
 	for importPkg := range importsMap {
 		importPkg = strings.TrimSpace(importPkg)
-		if importPkg != "" {
-			buffer.WriteString(fmt.Sprintf(`\t"%s"\n`, importPkg))
+		if importPkg != "" && importPkg != "sql" {
+			buffer.WriteString(fmt.Sprintf("\t"+`"%s"`+"\n", importPkg))
 		}
 	}
 	return buffer.String()

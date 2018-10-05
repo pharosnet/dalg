@@ -24,10 +24,10 @@ type Interface struct {
 	MapName   string    `xml:"mapName,attr"`
 	Type string `xml:"type,attr,omitempty"`
 	MapType string `xml:"mapType,attr,omitempty"`
-	Columns   []Column  `xml:"columns,omitempty"`
-	Options []EnumOption `xml:"options,omitempty"`
-	Fields []Field `xml:"fields,omitempty"`
-	Queries   []Query   `xml:"queries,omitempty"`
+	Columns   []Column  `xml:"column,omitempty"`
+	Options []EnumOption `xml:"option,omitempty"`
+	Fields []Field `xml:"field,omitempty"`
+	Queries   []Query   `xml:"query,omitempty"`
 	Package   string 	`xml:"-"`
 	Imports   []string `xml:"-"`
 	Dialect          string `xml:"-"`
@@ -73,7 +73,7 @@ type Field struct {
 
 type Query struct {
 	MapName string `xml:"mapName,attr"`
-	Args   []QueryArg `xml:"args"`
+	Args   []QueryArg `xml:"arg"`
 	Result string     `xml:"result,attr"`
 	Sql    Sql        `xml:"sql"`
 }
