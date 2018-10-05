@@ -1,76 +1,43 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <db
-        package=""
-        dialect=""
+        package="dal"
+        dialect="postgres"
         driver=""
         connMaxLifetime="2s"
         maxIdleConns=""
         maxOpenConns=""
         >
-    <interface class="table" schema="" name="" mapName="" >
-        <column name="" type="" mapName="" mapType="" pk="true" increment="true" />
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="" json="" />
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="time.Time" createBy="" />
-        <column name="" type="" mapName="" mapType="NullTime" createTime="" />
-        <column name="" type="" mapName="" mapType="" modifyBy="" />
-        <column name="" type="" mapName="" mapType="" modifyTime=""/>
-        <column name="" type="" mapName="" mapType="" version="" />
-        <query mapName="" result="list|one|int64">
-            <arg mapName="" mapType="" />
-            <arg mapName="" mapType="" />
+    <interface class="table" schema="public" name="user" mapName="User" >
+        <column name="id" type="varchar(64)" mapName="Id" mapType="sql.NullString" pk="true" increment="true" />
+        <column name="name" type="varchar(255)" mapName="Name" mapType="sql.NullString" />
+        <column name="age" type="numeric(18)" mapName="Age" mapType="sql.NullInt64" />
+        <column name="sex" type="boolean" mapName="Sex" mapType="Sex" />
+        <column name="money" type="numeric(18,2)" mapName="Money" mapType="sql.NullFloat64" />
+        <column name="info" type="jsonb" mapName="Info" mapType="UserInfo" json="true" />
+        <column name="create_by" type="varchar(255)" mapName="CreateBy" mapType="sql.NullString" createBy="" />
+        <column name="create_time" type="timestamp" mapName="CreateTime" mapType="NullTime" createTime="" />
+        <column name="modify_by" type="varchar(255)" mapName="ModifyBy" mapType="sql.NullString" modifyBy="" />
+        <column name="modify_time" type="timestamp" mapName="ModifyTime" mapType="NullTime" modifyTime=""/>
+        <column name="version" type="bigint" mapName="Version" mapType="sql.NullInt64" version="true" />
+        <query mapName="ListUsers" result="">
+            <arg mapName="limit" mapType="int64" />
+            <arg mapName="offset" mapType="int64" />
             <sql>
                 <![CDATA[
-
+                SELECT "id", "name", "age", "sex", "money", "info", "create_by", "create_time", "modify_by", "modify_time", "version"
+                FROM "user"
+                LIMIT $1 OFFSET $2
                 ]]>
             </sql>
         </query>
     </interface>
-    <interface class="json" mapName="" >
-        <field mapName="" mapType="" />
-        <field mapName="" mapType="" />
-        <field mapName="" mapType="" />
+    <interface class="json" mapName="UserInfo" >
+        <field mapName="Id" mapType="string" />
+        <field mapName="Age" mapType="int64" />
     </interface>
-    <interface class="enum" mapName="" mapType="" type="bool"  >
-        <option value="" mapValue="" default="" />
-        <option value="" mapValue="" />
+    <interface class="enum" mapName="Sex" mapType="string" type="bool"  >
+        <option value="true" mapValue="MALE" default="true" />
+        <option value="false" mapValue="FEMALE" />
     </interface>
-    <interface class="view" schema="" name="" mapName="" >
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="" />
-        <column name="" type="" mapName="" mapType="" />
-        <extraType>
-            <enum id="UserSex" >
-                <option mapName="" mapType="" />
-                <option mapName="" mapType="" />
-            </enum>
-            <json id="UserInfo" >
-                <field mapName="" mapType="" />
-                <field mapName="" mapType="" />
-                <field mapName="" mapType="" />
-            </json>
-        </extraType>
-        <query mapName="" result="list|one|int64">
-            <arg mapName="" mapType="" />
-            <arg mapName="" mapType="" />
-            <sql>
-                <![CDATA[
-
-                ]]>
-            </sql>
-        </query>
-    </interface>
-
 
 </db>

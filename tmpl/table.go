@@ -39,6 +39,7 @@ func WriteTableOrViewFile(interfaceDef def.Interface, dir string) error {
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
+	buffer.WriteString(_notes + "\n")
 	// package
 	buffer.WriteString(fmt.Sprintf(`package %s\n`, interfaceDef.Package))
 	buffer.WriteByte('\n')

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-var _contextTpl = `
+var _contextTpl = _notes + `
 package %s
 
 import (

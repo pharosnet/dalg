@@ -13,12 +13,12 @@ func main() {
 	begTime := time.Now()
 
 	args := os.Args
-	if len(args) != 2 {
+	if len(args) != 3 {
 		helpInfp := `usage: dalg [db def file path] [dir path of generated code files]`
 		log.Printf("missing args,\n\t%s\n", helpInfp)
 		return
 	}
-	if genErr := process.Generate(args[0], args[1]); genErr != nil {
+	if genErr := process.Generate(args[1], args[2]); genErr != nil {
 		log.Printf("failed, \n%v", genErr)
 		return
 	}

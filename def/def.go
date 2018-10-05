@@ -14,7 +14,7 @@ type Db struct {
 	//ConnMaxLifetimeV time.Duration      `xml:"-"`
 	//MaxIdleConns     int64       `xml:"maxIdleConns,attr,omitempty"`
 	//MaxOpenConns     int64       `xml:"maxOpenConns,attr,omitempty"`
-	Interfaces       []Interface `xml:"interfaces"`
+	Interfaces       []Interface `xml:"interface"`
 }
 
 type Interface struct {

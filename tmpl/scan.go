@@ -7,13 +7,11 @@ import (
 	"path/filepath"
 )
 
-var _scanTpl = `
+var _scanTpl = _notes + `
 package %s
 
 import (
 	"database/sql/driver"
-	"encoding/json"
-	"errors"
 	"time"
 )
 

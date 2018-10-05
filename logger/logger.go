@@ -11,7 +11,7 @@ var _logger *log.Logger
 
 func Log() *log.Logger {
 	_once.Do(func() {
-		_logger = log.New(os.Stdout, "dalg", log.LstdFlags|log.Lshortfile)
+		_logger = log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
 	})
 	return _logger
 }

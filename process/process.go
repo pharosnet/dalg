@@ -20,7 +20,7 @@ func Generate(defPath string, destDirPath string) error {
 func generate0(destDirPath string, dbDef *def.Db) error {
 	log := logger.Log()
 	destDirPath = filepath.Join(destDirPath, dbDef.Package)
-	mkdirErr := os.MkdirAll(destDirPath, os.ModeDir)
+	mkdirErr := os.MkdirAll(destDirPath, os.ModePerm)
 	if mkdirErr != nil {
 		return fmt.Errorf("mkdir failed, [%v], %v\n", destDirPath, mkdirErr)
 	}

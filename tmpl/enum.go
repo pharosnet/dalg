@@ -10,6 +10,7 @@ import (
 
 func WriteEnumFile(enumDefs []def.Interface, dir string) error {
 	buffer := bytes.NewBuffer([]byte{})
+	buffer.WriteString(_notes + "\n")
 	// package
 	pknName := enumDefs[0].Package
 	buffer.WriteString(fmt.Sprintf(`package %s\n`, pknName))

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-var _logTpl = `
+var _logTpl = _notes + `
 package %s
 
 type Log interface {
