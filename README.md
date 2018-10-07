@@ -1,5 +1,6 @@
 # dalg
 一个Golang 的DATA ACCESS LAYER代码生成器.
+这是个粗陋的版本，下一个版会结合PHAROSNET/DALC进行重构优化。
 
 特性：
 
