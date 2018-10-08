@@ -5,7 +5,9 @@ package process
 
 import (
 	"github.com/pharosnet/dalg/logger"
+	"os"
 	"os/exec"
+	"strings"
 )
 
 func formatAndVet(dir string) (err error) {

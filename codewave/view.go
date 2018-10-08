@@ -24,7 +24,7 @@ func waveView(view *def.Interface) error {
 	// imports
 	waveViewImports(w, view.Imports)
 	// struct
-	waveViewtruct(w, view)
+	waveViewStruct(w, view)
 	// queries
 	waveViewQueries(w, view)
 	return WriteToFile(w, view)
@@ -38,7 +38,7 @@ func waveViewImports(w Writer, imports []string)  {
 	waveImports(w, imports)
 }
 
-func waveViewtruct(w Writer, table *def.Interface)  {
+func waveViewStruct(w Writer, table *def.Interface)  {
 	waveModel(w, table)
 }
 
