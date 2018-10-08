@@ -125,7 +125,7 @@ func waveTableStruct(w Writer, table *def.Interface)  {
 	w.WriteString("\n")
 	w.WriteString("\n")
 	// load fn
-	w.WriteString(fmt.Sprintf(`type %sLoadOneFunc func(ctx context.Context, rows *%s, rowErr error) (err error)`, toCamel(table.MapName, true), toCamel(table.MapName, true)))
+	w.WriteString(fmt.Sprintf(`type %sQueryCallbackFunc func(ctx context.Context, rows *%s, rowErr error) (err error)`, toCamel(table.MapName, true), toCamel(table.MapName, true)))
 	w.WriteString("\n")
 	w.WriteString("\n")
 	// map to interfaces
