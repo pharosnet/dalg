@@ -27,7 +27,7 @@ type Interface struct {
 	Type          string       `xml:"type,attr,omitempty"`
 	MapType       string       `xml:"mapType,attr,omitempty"`
 	Columns       []Column     `xml:"column,omitempty"`
-	Indexes       []Index      `xml:"indexes,omitempty"`
+	Indexes       []Index      `xml:"index,omitempty"`
 	Options       []EnumOption `xml:"option,omitempty"`
 	Fields        []Field      `xml:"field,omitempty"`
 	Queries       []Query      `xml:"query,omitempty"`
@@ -58,7 +58,7 @@ type Column struct {
 type Index struct {
 	Name      string `xml:"name,attr"`
 	Type      string `xml:"type,attr"`
-	Unique    bool   `xml:"unique,attr"`
+	Unique    bool   `xml:"unique,attr,omitempty"`
 	Columns   string `xml:"columns,attr"`
 	SortOrder string `xml:"sortOrder,attr,omitempty"`
 	Ops       string `xml:"ops,attr,omitempty"`

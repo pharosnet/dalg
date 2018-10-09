@@ -106,7 +106,7 @@ func wavePostgresDDL(w Writer, tables []*def.Interface) {
 		w.WriteString("\n\n")
 		// index
 		for _, index := range table.Indexes {
-			idxName := strings.ToUpper(strings.TrimSpace(index.Name))
+			idxName := fmt.Sprintf(`%s_IDX_%s`, name, strings.ToUpper(strings.TrimSpace(index.Name)))
 			w.WriteString(fmt.Sprintf(`Index: %s`, idxName))
 			w.WriteString("\n\n")
 			columns := strings.Split(index.Columns, ",")
