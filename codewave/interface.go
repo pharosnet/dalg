@@ -12,8 +12,6 @@ import (
 
 var codeFileFolder = ""
 
-
-
 func Wave(db *def.Db, dir string) (err error) {
 	if db == nil {
 		err = errors.New("wave code failed, non-db definition")

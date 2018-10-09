@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func waveQuery(w Writer, definition *def.Interface)  {
+func waveQuery(w Writer, definition *def.Interface) {
 	for _, query := range definition.Queries {
 		queryResult := strings.ToLower(strings.TrimSpace(query.Result))
 		query.Result = queryResult
@@ -29,7 +29,7 @@ func flatSQL(ql string) string {
 	return strings.TrimSpace(querySql)
 }
 
-func waveQueryOne(w Writer, d *def.Interface, q *def.Query)  {
+func waveQueryOne(w Writer, d *def.Interface, q *def.Query) {
 	w.WriteString(fmt.Sprintf("const %s%sSQL = `%s` \n", toCamel(d.MapName, false), toCamel(q.MapName, true), flatSQL(q.Sql.Value)))
 	w.WriteString("\n")
 	queryArgs := ""
@@ -79,7 +79,7 @@ func waveQueryOne(w Writer, d *def.Interface, q *def.Query)  {
 	w.WriteString("\n")
 }
 
-func waveQueryList(w Writer, d *def.Interface, q *def.Query)  {
+func waveQueryList(w Writer, d *def.Interface, q *def.Query) {
 	w.WriteString(fmt.Sprintf("const %s%sSQL = `%s` \n", toCamel(d.MapName, false), toCamel(q.MapName, true), flatSQL(q.Sql.Value)))
 	w.WriteString("\n")
 	queryArgs := ""
@@ -131,7 +131,7 @@ func waveQueryList(w Writer, d *def.Interface, q *def.Query)  {
 }
 
 // int64 float62 string bool -> sql.nullType
-func waveQueryBuiltin(w Writer, d *def.Interface, q *def.Query)  {
+func waveQueryBuiltin(w Writer, d *def.Interface, q *def.Query) {
 	w.WriteString(fmt.Sprintf("const %s%sSQL = `%s` \n", toCamel(d.MapName, false), toCamel(q.MapName, true), flatSQL(q.Sql.Value)))
 	w.WriteString("\n")
 	queryArgs := ""

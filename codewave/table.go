@@ -48,7 +48,7 @@ func waveTable(table *def.Interface) error {
 	return WriteToFile(w, table)
 }
 
-func waveTableImports(w Writer, imports []string)  {
+func waveTableImports(w Writer, imports []string) {
 	imports = append(imports, "context")
 	imports = append(imports, "database/sql")
 	imports = append(imports, "errors")
@@ -57,19 +57,17 @@ func waveTableImports(w Writer, imports []string)  {
 	waveImports(w, imports)
 }
 
-func waveTableStruct(w Writer, table *def.Interface)  {
+func waveTableStruct(w Writer, table *def.Interface) {
 	waveModel(w, table)
 }
 
-func waveTableCRUD(w Writer, table *def.Interface)  {
+func waveTableCRUD(w Writer, table *def.Interface) {
 	waveTableGetOne(w, table)
 	waveTableInsert(w, table)
 	waveTableUpdate(w, table)
 	waveTableDelete(w, table)
 }
 
-func waveTableQueries(w Writer, table *def.Interface)  {
+func waveTableQueries(w Writer, table *def.Interface) {
 	waveQuery(w, table)
 }
-
-

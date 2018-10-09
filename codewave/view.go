@@ -30,7 +30,7 @@ func waveView(view *def.Interface) error {
 	return WriteToFile(w, view)
 }
 
-func waveViewImports(w Writer, imports []string)  {
+func waveViewImports(w Writer, imports []string) {
 	imports = append(imports, "context")
 	imports = append(imports, "database/sql")
 	imports = append(imports, "fmt")
@@ -38,12 +38,10 @@ func waveViewImports(w Writer, imports []string)  {
 	waveImports(w, imports)
 }
 
-func waveViewStruct(w Writer, table *def.Interface)  {
+func waveViewStruct(w Writer, table *def.Interface) {
 	waveModel(w, table)
 }
 
-func waveViewQueries(w Writer, table *def.Interface)  {
+func waveViewQueries(w Writer, table *def.Interface) {
 	waveQuery(w, table)
 }
-
-

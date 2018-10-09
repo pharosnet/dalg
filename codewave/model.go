@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func waveModel(w Writer, model *def.Interface)  {
+func waveModel(w Writer, model *def.Interface) {
 	// struct
 	w.WriteString(fmt.Sprintf(`type %s struct {`, toCamel(model.MapName, true)))
 	w.WriteString("\n")
@@ -77,7 +77,7 @@ func waveModel(w Writer, model *def.Interface)  {
 	w.WriteString("\n")
 	w.WriteString("\n")
 	// map to interfaces
-	w.WriteString(fmt.Sprintf(`func %sArrayMapToInterfacs(rows []*%s) []interface{} {`, toCamel(model.MapName, false),toCamel(model.MapName, true)))
+	w.WriteString(fmt.Sprintf(`func %sArrayMapToInterfacs(rows []*%s) []interface{} {`, toCamel(model.MapName, false), toCamel(model.MapName, true)))
 	w.WriteString("\n")
 	w.WriteString(`	array := make([]interface{}, len(rows))`)
 	w.WriteString("\n")

@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func waveTableDelete(w Writer, table *def.Interface)  {
+func waveTableDelete(w Writer, table *def.Interface) {
 	ql, qlErr := buildDeleteSql(table)
 	if qlErr != nil {
 		panic(qlErr)
@@ -80,8 +80,8 @@ func buildPostgresDeleteSql(table *def.Interface) (ql string, err error) {
 		if i > 1 {
 			bb.WriteString(" AND ")
 		}
-		bb.WriteString(fmt.Sprintf(`"%s" = $%d`, strings.TrimSpace(pk.Name), i + 1))
-		i ++
+		bb.WriteString(fmt.Sprintf(`"%s" = $%d`, strings.TrimSpace(pk.Name), i+1))
+		i++
 	}
 	if table.Version.MapName != "" {
 		bb.WriteString(fmt.Sprintf(` AND "%s" = $%d`, strings.TrimSpace(table.Version.Name), i))
@@ -94,7 +94,6 @@ func buildMysqlDeleteSql(table *def.Interface) (ql string, err error) {
 
 	return
 }
-
 
 func buildOracleDeleteSql(table *def.Interface) (ql string, err error) {
 

@@ -15,7 +15,7 @@ func Read(filePath string) (db *Db, err error) {
 		return
 	}
 	db = new(Db)
-	xmlUnmarshalErr :=  xml.Unmarshal(bb, db)
+	xmlUnmarshalErr := xml.Unmarshal(bb, db)
 	if readFileErr != nil {
 		err = fmt.Errorf("read def file failed, %v\n", xmlUnmarshalErr)
 		return

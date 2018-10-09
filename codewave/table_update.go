@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func waveTableUpdate(w Writer, table *def.Interface)  {
+func waveTableUpdate(w Writer, table *def.Interface) {
 	ql, qlErr := buildUpdateSql(table)
 	if qlErr != nil {
 		panic(qlErr)
@@ -18,7 +18,7 @@ func waveTableUpdate(w Writer, table *def.Interface)  {
 
 	w.WriteString(fmt.Sprintf("const %sUpdateSQL = `%s` \n", toCamel(table.MapName, false), ql))
 	w.WriteString("\n")
-	w.WriteString(fmt.Sprintf(`func %sUpdate(ctx context.Context, rows ...*%s) (affected int64, err error) {`, toCamel(table.MapName, true),toCamel(table.MapName, true)))
+	w.WriteString(fmt.Sprintf(`func %sUpdate(ctx context.Context, rows ...*%s) (affected int64, err error) {`, toCamel(table.MapName, true), toCamel(table.MapName, true)))
 	w.WriteString("\n")
 	w.WriteString(`	fn := func(ctx context.Context, stmt *sql.Stmt, arg interface{}) (result sql.Result, err error) {`)
 	w.WriteString("\n")
@@ -96,7 +96,7 @@ func buildPostgresUpdateSql(table *def.Interface) (ql string, err error) {
 			}
 		}
 		bb.WriteString(fmt.Sprintf(`"%s" = $%d`, strings.TrimSpace(col.Name), i))
-		i ++
+		i++
 	}
 	bb.WriteString(` WHERE `)
 	for pi, pk := range table.Pks {
@@ -104,7 +104,7 @@ func buildPostgresUpdateSql(table *def.Interface) (ql string, err error) {
 			bb.WriteString(` AND `)
 		}
 		bb.WriteString(fmt.Sprintf(`"%s" = $%d`, strings.TrimSpace(pk.Name), i))
-		i ++
+		i++
 	}
 	if table.Version.MapName != "" {
 		bb.WriteString(fmt.Sprintf(` AND "%s" = $%d `, table.Version.Name, i))
@@ -113,12 +113,10 @@ func buildPostgresUpdateSql(table *def.Interface) (ql string, err error) {
 	return
 }
 
-
 func buildMysqlUpdateSql(table *def.Interface) (ql string, err error) {
 
 	return
 }
-
 
 func buildOracleUpdateSql(table *def.Interface) (ql string, err error) {
 

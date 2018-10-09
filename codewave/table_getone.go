@@ -61,7 +61,6 @@ func waveTableGetOne(w Writer, table *def.Interface) {
 	w.WriteString("\n")
 }
 
-
 func buildGetOneSql(table *def.Interface) (ql string, err error) {
 	switch table.Dialect {
 	case "postgres":
@@ -86,7 +85,7 @@ func buildPostgresGetOneSql(table *def.Interface) (ql string, err error) {
 		bb.WriteString(fmt.Sprintf(`"%s"`, strings.TrimSpace(col.Name)))
 	}
 	if table.Schema != "" {
-		bb.WriteString(fmt.Sprintf(` FROM "%s"."%s" WHERE `, table.Schema,  table.Name))
+		bb.WriteString(fmt.Sprintf(` FROM "%s"."%s" WHERE `, table.Schema, table.Name))
 	} else {
 		bb.WriteString(fmt.Sprintf(` FROM "%s" WHERE `, table.Name))
 	}
@@ -94,7 +93,7 @@ func buildPostgresGetOneSql(table *def.Interface) (ql string, err error) {
 		if pi > 0 {
 			bb.WriteString(` AND `)
 		}
-		bb.WriteString(fmt.Sprintf(`"%s" = $%d`, strings.TrimSpace(pk.Name), pi + 1))
+		bb.WriteString(fmt.Sprintf(`"%s" = $%d`, strings.TrimSpace(pk.Name), pi+1))
 	}
 	ql = strings.TrimSpace(strings.ToUpper(bb.String()))
 	return
@@ -105,11 +104,7 @@ func buildMysqlGetOneSql(table *def.Interface) (ql string, err error) {
 	return
 }
 
-
 func buildOracleGetOneSql(table *def.Interface) (ql string, err error) {
 
 	return
 }
-
-
-

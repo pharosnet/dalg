@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func waveTableInsert(w Writer, table *def.Interface)  {
+func waveTableInsert(w Writer, table *def.Interface) {
 	ql, qlErr := buildInsertSql(table)
 	if qlErr != nil {
 		panic(qlErr)
@@ -17,7 +17,7 @@ func waveTableInsert(w Writer, table *def.Interface)  {
 	}
 	w.WriteString(fmt.Sprintf("const %sInsertSQL = `%s` \n", toCamel(table.MapName, false), ql))
 	w.WriteString("\n")
-	w.WriteString(fmt.Sprintf(`func %sInsert(ctx context.Context, rows ...*%s) (affected int64, err error) {`, toCamel(table.MapName, true),toCamel(table.MapName, true)))
+	w.WriteString(fmt.Sprintf(`func %sInsert(ctx context.Context, rows ...*%s) (affected int64, err error) {`, toCamel(table.MapName, true), toCamel(table.MapName, true)))
 	w.WriteString("\n")
 	w.WriteString(`	fn := func(ctx context.Context, stmt *sql.Stmt, arg interface{}) (result sql.Result, err error) {`)
 	w.WriteString("\n")
@@ -51,7 +51,6 @@ func waveTableInsert(w Writer, table *def.Interface)  {
 	w.WriteString("\n")
 }
 
-
 func buildInsertSql(table *def.Interface) (ql string, err error) {
 	switch table.Dialect {
 	case "postgres":
@@ -82,7 +81,7 @@ func buildPostgresInsertSql(table *def.Interface) (ql string, err error) {
 	}
 	bb.WriteString(`) VALUES (`)
 	colLen := len(table.Columns)
-	for i := 1 ; i <= colLen ; i ++ {
+	for i := 1; i <= colLen; i++ {
 		if i == 1 {
 			bb.WriteString(fmt.Sprintf("$%d", i))
 		} else {
@@ -94,12 +93,10 @@ func buildPostgresInsertSql(table *def.Interface) (ql string, err error) {
 	return
 }
 
-
 func buildMysqlInsertSql(table *def.Interface) (ql string, err error) {
 
 	return
 }
-
 
 func buildOracleInsertSql(table *def.Interface) (ql string, err error) {
 

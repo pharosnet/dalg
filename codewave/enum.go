@@ -34,19 +34,17 @@ func waveEnum(enum *def.Interface) error {
 	waveEnumScan(w, enum)
 	// value
 	waveEnumValue(w, enum)
-
 	return WriteToFile(w, enum)
 }
 
-func waveEnumImports(w Writer, imports []string)  {
-	imports = append(imports, "database/sql")
+func waveEnumImports(w Writer, imports []string) {
 	imports = append(imports, "database/sql/driver")
 	imports = append(imports, "errors")
 	imports = append(imports, "fmt")
 	waveImports(w, imports)
 }
 
-func waveEnumVars(w Writer, enum *def.Interface)  {
+func waveEnumVars(w Writer, enum *def.Interface) {
 	dataMask := ""
 	if enum.MapType == "string" {
 		dataMask = `"`
@@ -67,7 +65,7 @@ func waveEnumVars(w Writer, enum *def.Interface)  {
 			toCamel(enum.MapName, true), toCamel(opt.MapValue, true),
 			dataMask, opt.MapValue, dataMask,
 			oriMask, opt.Value, oriMask,
-			))
+		))
 		w.WriteString("\n")
 	}
 	w.WriteString(`)`)
@@ -76,7 +74,7 @@ func waveEnumVars(w Writer, enum *def.Interface)  {
 }
 
 // origin enum type only supports string, bool and int64
-func waveEnumStruct(w Writer, enum *def.Interface)  {
+func waveEnumStruct(w Writer, enum *def.Interface) {
 	w.WriteString(fmt.Sprintf(`type %s struct {`, toCamel(enum.MapName, true)))
 	w.WriteString("\n")
 	w.WriteString(fmt.Sprintf(`	Data %s`, enum.MapType))
@@ -119,7 +117,7 @@ func waveEnumStruct(w Writer, enum *def.Interface)  {
 	w.WriteString("\n")
 }
 
-func waveEnumScan(w Writer, enum *def.Interface)  {
+func waveEnumScan(w Writer, enum *def.Interface) {
 	dataMask := ""
 	if enum.MapType == "string" {
 		dataMask = `"`
@@ -174,7 +172,7 @@ func waveEnumScan(w Writer, enum *def.Interface)  {
 	w.WriteString("\n")
 }
 
-func waveEnumValue(w Writer, enum *def.Interface)  {
+func waveEnumValue(w Writer, enum *def.Interface) {
 	dataMask := ""
 	if enum.MapType == "string" {
 		dataMask = `"`
