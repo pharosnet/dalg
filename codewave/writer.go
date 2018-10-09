@@ -29,15 +29,17 @@ func WriteToFile(w Writer, interfaceDef *def.Interface) (err error) {
 		logger.Log().Println(err)
 		return
 	}
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil {
+			err = closeErr
+			logger.Log().Println(err)
+		}
+	}()
 	n, wToErr := w.WriteTo(f)
 	if wToErr == nil && n < int64(w.Len()) {
 		err = io.ErrShortWrite
 		logger.Log().Println(err)
 		return
-	}
-	if closeErr := f.Close(); err == nil {
-		err = closeErr
-		logger.Log().Println(err)
 	}
 	return
 }
