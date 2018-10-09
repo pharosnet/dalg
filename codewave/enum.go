@@ -62,7 +62,7 @@ func waveEnumVars(w Writer, enum *def.Interface) {
 	w.WriteString("\n")
 	for _, opt := range enum.Options {
 		w.WriteString(fmt.Sprintf(`	%s%s = %s{Data: %s%s%s, Origin: %s%s%s, Valid: true} `,
-			toCamel(enum.MapName, true), toCamel(opt.MapValue, true),
+			toCamel(enum.MapName, true), toCamel(opt.MapValue, true), toCamel(enum.MapName, true),
 			dataMask, opt.MapValue, dataMask,
 			oriMask, opt.Value, oriMask,
 		))

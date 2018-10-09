@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/pharosnet/dalg/def"
-	"os"
 	"strings"
 )
 
@@ -13,7 +12,6 @@ func waveTableGetOne(w Writer, table *def.Interface) {
 	ql, qlErr := buildGetOneSql(table)
 	if qlErr != nil {
 		panic(qlErr)
-		os.Exit(1)
 	}
 	w.WriteString(fmt.Sprintf("const %sGetOneSQL = `%s` \n", toCamel(table.MapName, false), ql))
 	pkArgs := ""

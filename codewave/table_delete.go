@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/pharosnet/dalg/def"
-	"os"
 	"strings"
 )
 
@@ -13,7 +12,6 @@ func waveTableDelete(w Writer, table *def.Interface) {
 	ql, qlErr := buildDeleteSql(table)
 	if qlErr != nil {
 		panic(qlErr)
-		os.Exit(1)
 	}
 	w.WriteString(fmt.Sprintf("const %sDeleteSQL = `%s` \n", toCamel(table.MapName, false), ql))
 	w.WriteString("\n")
