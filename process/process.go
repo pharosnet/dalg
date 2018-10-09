@@ -2,9 +2,9 @@ package process
 
 import (
 	"fmt"
+	"github.com/pharosnet/dalg/codewave"
 	"github.com/pharosnet/dalg/def"
 	"github.com/pharosnet/dalg/logger"
-	"github.com/pharosnet/dalg/tmpl"
 	"os"
 	"path/filepath"
 )
@@ -25,16 +25,7 @@ func generate0(destDirPath string, dbDef *def.Db) error {
 		return fmt.Errorf("mkdir failed, [%v], %v\n", destDirPath, mkdirErr)
 	}
 	log.Printf("mkdir success, %s\n", destDirPath)
-	if err := tmpl.WriteLoggerFile(dbDef, destDirPath); err != nil {
-		return err
-	}
-	if err := tmpl.WriteContextFile(dbDef, destDirPath); err != nil {
-		return err
-	}
-	if err := tmpl.WriteScanFile(dbDef, destDirPath); err != nil {
-		return err
-	}
-	if err := tmpl.WriteInterfaces(dbDef, destDirPath); err != nil {
+	if err := codewave.Wave(dbDef, destDirPath); err != nil {
 		return err
 	}
 	if err := formatAndVet(destDirPath); err != nil {
