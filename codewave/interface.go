@@ -52,6 +52,8 @@ func Wave(db *def.Db, dir string) (err error) {
 		interfaceDef.Imports = make([]string, 0, 1)
 		if class == "table" {
 			interfaceDef.Dialect = db.Dialect
+			interfaceDef.Owner = db.Owner
+			interfaceDef.Tablespace = db.Tablespace
 			tables = append(tables, &interfaceDef)
 		} else if class == "view" {
 			views = append(views, &interfaceDef)

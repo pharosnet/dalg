@@ -42,6 +42,8 @@ def.xml的案例如下：
 <db
         package="dal"
         dialect="postgres"
+        tablespace=""
+        owner=""
         >
     <interface class="table" schema="public" name="user" mapName="User" >
         <column name="id" type="varchar(64)" mapName="Id" mapType="sql.NullString" pk="true" increment="false" />
@@ -55,6 +57,8 @@ def.xml的案例如下：
         <column name="modify_by" type="varchar(255)" mapName="ModifyBy" mapType="sql.NullString"  />
         <column name="modify_time" type="timestamp" mapName="ModifyTime" mapType="NullTime" />
         <column name="version" type="bigint" mapName="Version" mapType="sql.NullInt64" version="true" />
+        <index name="name_age" type="btree" columns="name, age" sortOrder="desc" unique="false" ops=""/>
+        <index name="create_time" type="btree" columns="create_time" sortOrder="desc" unique="false" ops=""/>
         <query mapName="List" result="" > <!-- result 支持 one, list, int64, string, bool, float64, 默认为list -->
             <arg mapName="limit" mapType="int64" />
             <arg mapName="offset" mapType="int64" />
@@ -95,9 +99,9 @@ def.xml的案例如下：
 
 ### TODO
 
-- 支持mysql
-- 支持oracle
-- 支持DDL
+- [ ] 支持mysql
+- [ ] 支持oracle
+- [x] 支持DDL
 
 ## License
 
