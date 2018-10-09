@@ -32,13 +32,8 @@ type Interface struct {
 	Imports       []string     `xml:"-"`
 	Dialect       string       `xml:"-"`
 	Pks           []Column     `xml:"-"`
-	PkNum         int64        `xml:"-"`
 	CommonColumns []Column     `xml:"-"`
 	Version       Column       `xml:"-"`
-	InsertSql     string       `xml:"-"`
-	UpdateSql     string       `xml:"-"`
-	DeleteSql     string       `xml:"-"`
-	GetOneSql     string       `xml:"-"`
 }
 
 type Column struct {
@@ -48,13 +43,7 @@ type Column struct {
 	MapType     string `xml:"mapType,attr"`
 	Pk          bool   `xml:"pk,attr,omitempty"`
 	Increment   bool   `xml:"increment,attr,omitempty"`
-	DbIncrement bool   `xml:"dbIncrement"`
-	CreateBy    bool   `xml:"createBy,attr,omitempty"`
-	CreateTime  bool   `xml:"createTime,attr,omitempty"`
-	ModifyBy    bool   `xml:"modifyBy,attr,omitempty"`
-	ModifyTime  bool   `xml:"modifyTime,attr,omitempty"`
 	Version     bool   `xml:"version,attr,omitempty"`
-	EnableNil   bool   `xml:"enableNil,attr,omitempty"`
 	Json        bool   `xml:"json,attr,omitempty"`
 	Xml         bool   `xml:"xml,attr,omitempty"`
 }

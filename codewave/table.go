@@ -32,7 +32,6 @@ func waveTable(table *def.Interface) error {
 			table.Imports = append(table.Imports, col.MapType[0:pos])
 		}
 	}
-	table.PkNum = int64(len(table.Pks))
 	// intro
 	waveIntroduction(w)
 	// package
