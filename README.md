@@ -55,7 +55,7 @@ def.xml的案例如下：
         <column name="modify_by" type="varchar(255)" mapName="ModifyBy" mapType="sql.NullString"  />
         <column name="modify_time" type="timestamp" mapName="ModifyTime" mapType="NullTime" />
         <column name="version" type="bigint" mapName="Version" mapType="sql.NullInt64" version="true" />
-        <query mapName="List" >
+        <query mapName="List" result="" > <!-- result 支持 one, list, int64, string, bool, float64, 默认为list -->
             <arg mapName="limit" mapType="int64" />
             <arg mapName="offset" mapType="int64" />
             <sql>
