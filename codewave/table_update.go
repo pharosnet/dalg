@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func waveTableUpdate(w Writer, table *def.Interface) {
+func waveTableUpdate(w Writer, table def.Interface) {
 	ql, qlErr := buildUpdateSql(table)
 	if qlErr != nil {
 		panic(qlErr)
@@ -57,7 +57,7 @@ func waveTableUpdate(w Writer, table *def.Interface) {
 	w.WriteString("\n")
 }
 
-func buildUpdateSql(table *def.Interface) (ql string, err error) {
+func buildUpdateSql(table def.Interface) (ql string, err error) {
 	switch table.Dialect {
 	case "postgres":
 		ql, err = buildPostgresUpdateSql(table)
@@ -71,7 +71,7 @@ func buildUpdateSql(table *def.Interface) (ql string, err error) {
 	return
 }
 
-func buildPostgresUpdateSql(table *def.Interface) (ql string, err error) {
+func buildPostgresUpdateSql(table def.Interface) (ql string, err error) {
 	bb := bytes.NewBuffer([]byte{})
 	if table.Schema != "" {
 		bb.WriteString(fmt.Sprintf(`UPDATE "%s"."%s" SET`, table.Schema, table.Name))
@@ -106,16 +106,16 @@ func buildPostgresUpdateSql(table *def.Interface) (ql string, err error) {
 	if table.Version.MapName != "" {
 		bb.WriteString(fmt.Sprintf(` AND "%s" = $%d `, table.Version.Name, i))
 	}
-	ql = strings.TrimSpace(strings.ToUpper(bb.String()))
+	ql = strings.TrimSpace(bb.String())
 	return
 }
 
-func buildMysqlUpdateSql(table *def.Interface) (ql string, err error) {
+func buildMysqlUpdateSql(table def.Interface) (ql string, err error) {
 
 	return
 }
 
-func buildOracleUpdateSql(table *def.Interface) (ql string, err error) {
+func buildOracleUpdateSql(table def.Interface) (ql string, err error) {
 
 	return
 }

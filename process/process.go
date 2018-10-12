@@ -20,8 +20,11 @@ func Generate(defPath string, destDirPath string) error {
 func generate0(destDirPath string, dbDef *def.Db) error {
 	log := logger.Log()
 	destDirPath = filepath.Join(destDirPath, dbDef.Package)
-	mkdirErr := os.MkdirAll(destDirPath, os.ModePerm)
-	if mkdirErr != nil {
+	if rmErr := os.RemoveAll(destDirPath); rmErr != nil {
+		return fmt.Errorf("remove dir failed, [%v], %v\n", destDirPath, rmErr)
+	}
+	log.Printf("remove dir success, %s\n", destDirPath)
+	if mkdirErr := os.MkdirAll(destDirPath, os.ModePerm); mkdirErr != nil {
 		return fmt.Errorf("mkdir failed, [%v], %v\n", destDirPath, mkdirErr)
 	}
 	log.Printf("mkdir success, %s\n", destDirPath)

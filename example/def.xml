@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<db package="dal"
+    dialect="postgres"
+    tablespace="pg_default"
+    owner="postgres"
+    ddl="true" >
+
+    <interface class="enum" mapName="Gender" mapType="string" type="bool">
+        <option value="true" mapValue="MALE" default="true" />
+        <option value="false" mapValue="FEMALE" />
+    </interface>
+
+    <interface class="json" mapName="UserInfo" >
+        <field mapName="Id" mapType="string" />
+        <field mapName="Age" mapType="int64" />
+    </interface>
+
+    <interface class="table" schema="public" name="user" mapName="User" >
+        <column name="id" type="varchar(64)" mapName="Id" mapType="string" pk="true" increment="false" />
+        <column name="name" type="varchar(255)" mapName="Name" mapType="string" />
+        <column name="age" type="numeric(18)" mapName="Age" mapType="int64" />
+        <column name="sex" type="boolean" mapName="Gender" mapType="Gender" />
+        <column name="money" type="numeric(18,2)" mapName="Money" mapType="float64" />
+        <column name="info" type="jsonb" mapName="Info" mapType="UserInfo" json="true" />
+        <column name="create_by" type="varchar(255)" mapName="CreateBy" mapType="string"  />
+        <column name="create_time" type="timestamp" mapName="CreateTime" mapType="github.com/pharosnet/dalc.NullTime"  />
+        <column name="modify_by" type="varchar(255)" mapName="ModifyBy" mapType="string"  />
+        <column name="modify_time" type="timestamp" mapName="ModifyTime" mapType="github.com/pharosnet/dalc.NullTime" />
+        <column name="version" type="bigint" mapName="Version" mapType="int64" version="true" />
+
+        <index name="name_age" type="btree" columns="name,age" sortOrder="desc" unique="false" ops=""/>
+        <index name="create_time" type="btree" columns="create_time" sortOrder="desc" unique="false" ops=""/>
+
+        <query mapName="List" result="list" > <!-- result 支持 one, list, int64, string, bool, float64, 默认为list -->
+            <arg mapName="limit" mapType="int64" />
+            <arg mapName="offset" mapType="int64" />
+            <sql>
+                <![CDATA[
+                SELECT "id", "name", "age", "sex", "money", "info", "create_by", "create_time", "modify_by", "modify_time", "version"
+                FROM "user"
+                LIMIT $1 OFFSET $2
+                ]]>
+            </sql>
+        </query>
+    </interface>
+
+    <interface class="view" mapName="UserCount">
+        <column name="count" type="numeric(18)" mapName="Count" mapType="sql.NullInt64" />
+        <query mapName="Normal" result="int64" >
+            <arg mapName="limit" mapType="int64" />
+            <arg mapName="offset" mapType="int64" />
+            <sql>
+                <![CDATA[
+                SELECT COUNT("id")
+                FROM "public"."user"
+                LIMIT $1 OFFSET $2
+                ]]>
+            </sql>
+        </query>
+    </interface>
+
+</db>

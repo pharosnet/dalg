@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func waveTableInsert(w Writer, table *def.Interface) {
+func waveTableInsert(w Writer, table def.Interface) {
 	ql, qlErr := buildInsertSql(table)
 	if qlErr != nil {
 		panic(qlErr)
@@ -49,7 +49,7 @@ func waveTableInsert(w Writer, table *def.Interface) {
 	w.WriteString("\n")
 }
 
-func buildInsertSql(table *def.Interface) (ql string, err error) {
+func buildInsertSql(table def.Interface) (ql string, err error) {
 	switch table.Dialect {
 	case "postgres":
 		ql, err = buildPostgresInsertSql(table)
@@ -63,7 +63,7 @@ func buildInsertSql(table *def.Interface) (ql string, err error) {
 	return
 }
 
-func buildPostgresInsertSql(table *def.Interface) (ql string, err error) {
+func buildPostgresInsertSql(table def.Interface) (ql string, err error) {
 	bb := bytes.NewBuffer([]byte{})
 	if table.Schema != "" {
 		bb.WriteString(fmt.Sprintf(`INSERT INTO "%s"."%s" (`, table.Schema, table.Name))
@@ -87,16 +87,16 @@ func buildPostgresInsertSql(table *def.Interface) (ql string, err error) {
 		}
 	}
 	bb.WriteString(`)`)
-	ql = strings.TrimSpace(strings.ToUpper(bb.String()))
+	ql = strings.TrimSpace(bb.String())
 	return
 }
 
-func buildMysqlInsertSql(table *def.Interface) (ql string, err error) {
+func buildMysqlInsertSql(table def.Interface) (ql string, err error) {
 
 	return
 }
 
-func buildOracleInsertSql(table *def.Interface) (ql string, err error) {
+func buildOracleInsertSql(table def.Interface) (ql string, err error) {
 
 	return
 }

@@ -6,8 +6,19 @@ import (
 	"github.com/pharosnet/dalg/logger"
 )
 
-func waveJsonObjects(jsonObjects []*def.Interface) error {
+func waveJsonObjects(jsonObjects []def.Interface) error {
 	for _, jsonObject := range jsonObjects {
+		if jsonObject.Name == "" {
+			jsonObject.Name = toUnderScore(jsonObject.MapName)
+		}
+		for i, col := range jsonObject.Fields {
+			pkg, mapType := parseCustomizeType(col.MapType)
+			col.MapType = mapType
+			if pkg != "" {
+				jsonObject.Imports = append(jsonObject.Imports, pkg)
+			}
+			jsonObject.Fields[i] = col
+		}
 		if err := waveJsonObject(jsonObject); err != nil {
 			logger.Log().Println(err)
 			return err
@@ -16,7 +27,7 @@ func waveJsonObjects(jsonObjects []*def.Interface) error {
 	return nil
 }
 
-func waveJsonObject(jsonObject *def.Interface) error {
+func waveJsonObject(jsonObject def.Interface) error {
 	w := NewWriter()
 	// intro
 	waveIntroduction(w)
@@ -42,7 +53,7 @@ func waveJsonObjectImports(w Writer, imports []string) {
 	waveImports(w, imports)
 }
 
-func waveJsonObjectStruct(w Writer, jsonObject *def.Interface) {
+func waveJsonObjectStruct(w Writer, jsonObject def.Interface) {
 	w.WriteString(fmt.Sprintf(`type %s struct {`, toCamel(jsonObject.MapName, true)))
 	w.WriteString("\n")
 	w.WriteString(`dalc.NullJson`)
@@ -76,7 +87,7 @@ func waveJsonObjectStruct(w Writer, jsonObject *def.Interface) {
 	w.WriteString("\n")
 	w.WriteString(fmt.Sprintf(`			"%s",`, format))
 	w.WriteString("\n")
-	w.WriteString(fmt.Sprintf(`			"%s"`, formatArgs))
+	w.WriteString(fmt.Sprintf(`			%s`, formatArgs))
 	w.WriteString("\n")
 	w.WriteString(`		)`)
 	w.WriteString("\n")
@@ -87,7 +98,7 @@ func waveJsonObjectStruct(w Writer, jsonObject *def.Interface) {
 	w.WriteString("\n")
 }
 
-func waveJsonObjectScan(w Writer, jsonObject *def.Interface) {
+func waveJsonObjectScan(w Writer, jsonObject def.Interface) {
 	w.WriteString(fmt.Sprintf(`func (e *%s) Scan(value interface{}) error {`, toCamel(jsonObject.MapName, true)))
 	w.WriteString("\n")
 	w.WriteString(`	if value == nil {`)
@@ -102,7 +113,13 @@ func waveJsonObjectScan(w Writer, jsonObject *def.Interface) {
 	w.WriteString("\n")
 	w.WriteString(`	if !ok {`)
 	w.WriteString("\n")
-	w.WriteString(fmt.Sprintf(`		return fmt.Errorf("%s: scan failed, Unmarshal json faild, %s", err)`, toCamel(jsonObject.MapName, true), "%v"))
+	w.WriteString(fmt.Sprintf(`		return errors.New("%s: scan failed, column type is not []byte")`, toCamel(jsonObject.MapName, true)))
+	w.WriteString("\n")
+	w.WriteString(`	}`)
+	w.WriteString("\n")
+	w.WriteString(`	if err := json.Unmarshal(val, e); err != nil {`)
+	w.WriteString("\n")
+	w.WriteString(fmt.Sprintf(`		return fmt.Errorf("%s: scan failed, unmarshal json failed, %s", err)`, toCamel(jsonObject.MapName, true), "%v"))
 	w.WriteString("\n")
 	w.WriteString(`	}`)
 	w.WriteString("\n")
@@ -110,12 +127,14 @@ func waveJsonObjectScan(w Writer, jsonObject *def.Interface) {
 	w.WriteString("\n")
 	w.WriteString(`	e.NullJson.Bytes = val`)
 	w.WriteString("\n")
+	w.WriteString(`	return nil`)
+	w.WriteString("\n")
 	w.WriteString(`}`)
 	w.WriteString("\n")
 	w.WriteString("\n")
 }
 
-func waveJsonObjectValue(w Writer, jsonObject *def.Interface) {
+func waveJsonObjectValue(w Writer, jsonObject def.Interface) {
 	w.WriteString(fmt.Sprintf(`func (e %s) Value() (driver.Value, error) {`, toCamel(jsonObject.MapName, true)))
 	w.WriteString("\n")
 	w.WriteString(`	p, err := json.Marshal(&e)`)

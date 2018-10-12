@@ -8,8 +8,16 @@ import (
 	"strings"
 )
 
-func waveEnums(enums []*def.Interface) error {
+func waveEnums(enums []def.Interface) error {
 	for _, enum := range enums {
+		if enum.Name == "" {
+			enum.Name = toUnderScore(enum.MapName)
+		}
+		pkg, mapType := parseCustomizeType(enum.MapType)
+		enum.MapType = mapType
+		if pkg != "" {
+			enum.Imports = append(enum.Imports, pkg)
+		}
 		if err := waveEnum(enum); err != nil {
 			logger.Log().Println(err)
 			return err
@@ -18,7 +26,7 @@ func waveEnums(enums []*def.Interface) error {
 	return nil
 }
 
-func waveEnum(enum *def.Interface) error {
+func waveEnum(enum def.Interface) error {
 	w := NewWriter()
 	// intro
 	waveIntroduction(w)
@@ -44,7 +52,7 @@ func waveEnumImports(w Writer, imports []string) {
 	waveImports(w, imports)
 }
 
-func waveEnumVars(w Writer, enum *def.Interface) {
+func waveEnumVars(w Writer, enum def.Interface) {
 	dataMask := ""
 	if enum.MapType == "string" {
 		dataMask = `"`
@@ -74,7 +82,7 @@ func waveEnumVars(w Writer, enum *def.Interface) {
 }
 
 // origin enum type only supports string, bool and int64
-func waveEnumStruct(w Writer, enum *def.Interface) {
+func waveEnumStruct(w Writer, enum def.Interface) {
 	w.WriteString(fmt.Sprintf(`type %s struct {`, toCamel(enum.MapName, true)))
 	w.WriteString("\n")
 	w.WriteString(fmt.Sprintf(`	Data %s`, enum.MapType))
@@ -104,7 +112,7 @@ func waveEnumStruct(w Writer, enum *def.Interface) {
 	w.WriteString("\n")
 	w.WriteString(`			s,`)
 	w.WriteString("\n")
-	w.WriteString(`			{%v %v},`)
+	w.WriteString(`			"{%v %v}",`)
 	w.WriteString("\n")
 	w.WriteString(`			e.Data, e.Origin,`)
 	w.WriteString("\n")
@@ -117,7 +125,7 @@ func waveEnumStruct(w Writer, enum *def.Interface) {
 	w.WriteString("\n")
 }
 
-func waveEnumScan(w Writer, enum *def.Interface) {
+func waveEnumScan(w Writer, enum def.Interface) {
 	dataMask := ""
 	if enum.MapType == "string" {
 		dataMask = `"`
@@ -172,7 +180,7 @@ func waveEnumScan(w Writer, enum *def.Interface) {
 	w.WriteString("\n")
 }
 
-func waveEnumValue(w Writer, enum *def.Interface) {
+func waveEnumValue(w Writer, enum def.Interface) {
 	dataMask := ""
 	if enum.MapType == "string" {
 		dataMask = `"`
@@ -202,7 +210,7 @@ func waveEnumValue(w Writer, enum *def.Interface) {
 	}
 	w.WriteString(`	default:`)
 	w.WriteString("\n")
-	w.WriteString(fmt.Sprintf(`		return errors.New("%s: to sql driver value failed, value is out of range")`, toCamel(enum.MapName, true)))
+	w.WriteString(fmt.Sprintf(`		return nil, errors.New("%s: to sql driver value failed, value is out of range")`, toCamel(enum.MapName, true)))
 	w.WriteString("\n")
 	w.WriteString(`	}`)
 	w.WriteString("\n")
