@@ -11,11 +11,14 @@ func waveImports(w Writer, imports []string) error {
 	}
 	importsMap := make(map[string]int)
 	for _, importName := range imports {
-		importsMap[importName] = 1
+		importName = strings.TrimSpace(importName)
+		if importName != "" && importName != "sql" {
+			importsMap[importName] = 1
+		}
 	}
 	w.WriteString(`import (`)
 	w.WriteString("\n")
-	for _, importPkg := range imports {
+	for importPkg := range importsMap {
 		w.WriteString(fmt.Sprintf(`	"%s" `, strings.TrimSpace(importPkg)))
 		w.WriteString("\n")
 	}

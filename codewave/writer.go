@@ -21,7 +21,7 @@ type Writer interface {
 	Len() int
 }
 
-func WriteToFile(w Writer, interfaceDef *def.Interface) (err error) {
+func WriteToFile(w Writer, interfaceDef def.Interface) (err error) {
 	filename := filepath.Join(codeFileFolder, fmt.Sprintf("%s_%s.go", strings.TrimSpace(strings.ToLower(interfaceDef.Class)), strings.TrimSpace(strings.ToLower(interfaceDef.Name))))
 	f, openErr := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if openErr != nil {

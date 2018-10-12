@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func waveDDL(tables []*def.Interface) error {
+func waveDDL(tables []def.Interface) error {
 	w := NewWriter()
 	dialect := strings.ToLower(strings.TrimSpace(tables[0].Dialect))
 	switch dialect {
@@ -46,8 +46,9 @@ func waveDDL(tables []*def.Interface) error {
 	return nil
 }
 
-func wavePostgresDDL(w Writer, tables []*def.Interface) {
+func wavePostgresDDL(w Writer, tables []def.Interface) {
 	for _, table := range tables {
+		table.Pks = make([]def.Column, 0, 1)
 		schema := strings.TrimSpace(table.Schema)
 		if schema == "" {
 			schema = "public"
@@ -55,14 +56,17 @@ func wavePostgresDDL(w Writer, tables []*def.Interface) {
 		name := strings.ToUpper(strings.TrimSpace(table.Name))
 		w.WriteString(fmt.Sprintf(`-- Table: %s."%s"`, schema, name))
 		w.WriteString("\n\n")
-		w.WriteString(fmt.Sprintf(`DROP TABLE %s."%s";`, schema, name))
+		w.WriteString(fmt.Sprintf(`DROP TABLE IF EXISTS %s."%s";`, schema, name))
 		w.WriteString("\n\n")
 		w.WriteString(fmt.Sprintf(`CREATE TABLE %s."%s"`, schema, name))
 		w.WriteString("\n")
 		w.WriteString("(")
 		w.WriteString("\n")
 		for _, col := range table.Columns {
-			w.WriteString(fmt.Sprintf(`	"%s" %s" `, strings.ToUpper(col.Name), col.Type))
+			if col.Pk {
+				table.Pks = append(table.Pks, col)
+			}
+			w.WriteString(fmt.Sprintf(`	"%s" %s `, strings.ToUpper(col.Name), col.Type))
 			if col.MapType == "string" || col.MapType == "sql.NullString" {
 				w.WriteString(` COLLATE pg_catalog."default"`)
 			}
@@ -107,7 +111,7 @@ func wavePostgresDDL(w Writer, tables []*def.Interface) {
 		// index
 		for _, index := range table.Indexes {
 			idxName := fmt.Sprintf(`%s_IDX_%s`, name, strings.ToUpper(strings.TrimSpace(index.Name)))
-			w.WriteString(fmt.Sprintf(`Index: %s`, idxName))
+			w.WriteString(fmt.Sprintf(`-- Index: %s`, idxName))
 			w.WriteString("\n\n")
 			columns := strings.Split(index.Columns, ",")
 			colExp := ""
@@ -139,10 +143,10 @@ func wavePostgresDDL(w Writer, tables []*def.Interface) {
 	}
 }
 
-func waveMysqlDDL(w Writer, tables []*def.Interface) {
+func waveMysqlDDL(w Writer, tables []def.Interface) {
 
 }
 
-func waveOracleDDL(w Writer, tables []*def.Interface) {
+func waveOracleDDL(w Writer, tables []def.Interface) {
 
 }

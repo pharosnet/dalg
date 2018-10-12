@@ -1,7 +1,6 @@
 package codewave
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"github.com/pharosnet/dalg/def"
@@ -38,11 +37,12 @@ func Wave(db *def.Db, dir string) (err error) {
 		return
 	}
 	codeFileFolder = strings.TrimSpace(dir)
-	tables := make([]*def.Interface, 0, 1) // ddl
-	views := make([]*def.Interface, 0, 1)
-	enums := make([]*def.Interface, 0, 1)
-	jsonObjects := make([]*def.Interface, 0, 1)
+	tables := make([]def.Interface, 0, 8) // ddl
+	views := make([]def.Interface, 0, 8)
+	enums := make([]def.Interface, 0, 8)
+	jsonObjects := make([]def.Interface, 0, 8)
 	for _, interfaceDef := range db.Interfaces {
+		interfaceDef.Package = db.Package
 		class := strings.ToLower(strings.TrimSpace(interfaceDef.Class))
 		if class == "" {
 			err = errors.New("def file is invalid, interface class is empty")
@@ -54,21 +54,13 @@ func Wave(db *def.Db, dir string) (err error) {
 			interfaceDef.Dialect = db.Dialect
 			interfaceDef.Owner = db.Owner
 			interfaceDef.Tablespace = db.Tablespace
-			tables = append(tables, &interfaceDef)
+			tables = append(tables, interfaceDef)
 		} else if class == "view" {
-			views = append(views, &interfaceDef)
+			views = append(views, interfaceDef)
 		} else if class == "enum" {
-			if pos := strings.LastIndexByte(interfaceDef.MapType, '.'); pos > 0 {
-				interfaceDef.Imports = append(interfaceDef.Imports, interfaceDef.MapType[0:pos])
-			}
-			enums = append(enums, &interfaceDef)
+			enums = append(enums, interfaceDef)
 		} else if class == "json" {
-			for _, col := range interfaceDef.Fields {
-				if pos := strings.LastIndexByte(col.MapType, '.'); pos > 0 {
-					interfaceDef.Imports = append(interfaceDef.Imports, col.MapType[0:pos])
-				}
-			}
-			jsonObjects = append(jsonObjects, &interfaceDef)
+			jsonObjects = append(jsonObjects, interfaceDef)
 		} else {
 			err = fmt.Errorf("invalid interface class, %s", class)
 			logger.Log().Println(err)
@@ -121,29 +113,31 @@ func toCamel(src string, aheadUp bool) string {
 	return ss
 }
 
-func toType(src string) string {
-	ss := src
-	if pos := strings.LastIndexByte(src, '/'); pos > 0 {
-		ss = src[pos+1:]
-	}
-	return ss
-}
-
-func importsCode(imports []string) string {
-	if imports == nil || len(imports) == 0 {
-		return ""
-	}
-	importsMap := make(map[string]int)
-	for _, importName := range imports {
-		importsMap[importName] = 1
-	}
-	buffer := bytes.NewBuffer([]byte{})
-	for importPkg := range importsMap {
-		importPkg = strings.TrimSpace(importPkg)
-		if importPkg != "" && importPkg != "sql" {
-			buffer.WriteString(fmt.Sprintf(`	"%s" `, importPkg))
-			buffer.WriteString("\n")
+func toUnderScore(src string) string {
+	pp := make([]byte, 0, 8)
+	p := []byte(strings.TrimSpace(src))
+	for i, char := range p {
+		if char >= 65 && char <= 90 {
+			if i > 0 {
+				pp = append(pp, '_')
+			}
+			pp = append(pp, char + 32)
+		} else {
+			pp = append(pp, char)
 		}
 	}
-	return buffer.String()
+	return string(pp)
+}
+
+func parseCustomizeType(typeName string) (pkg string, name string) {
+	if pos := strings.LastIndexByte(typeName, '.'); pos > 0 {
+		pkg = typeName[0:pos]
+	}
+	if pos := strings.LastIndexByte(typeName, '/'); pos > 0 {
+		name = typeName[pos+1:]
+	}
+	if name == "" {
+		name = typeName
+	}
+	return
 }

@@ -5,8 +5,19 @@ import (
 	"github.com/pharosnet/dalg/logger"
 )
 
-func waveViews(views []*def.Interface) error {
+func waveViews(views []def.Interface) error {
 	for _, view := range views {
+		if view.Name == "" {
+			view.Name = toUnderScore(view.MapName)
+		}
+		for i, col := range view.Columns {
+			pkg, mapType := parseCustomizeType(col.MapType)
+			col.MapType = mapType
+			if pkg != "" {
+				view.Imports = append(view.Imports, pkg)
+			}
+			view.Columns[i] = col
+		}
 		if err := waveView(view); err != nil {
 			logger.Log().Println(err)
 			return err
@@ -15,7 +26,7 @@ func waveViews(views []*def.Interface) error {
 	return nil
 }
 
-func waveView(view *def.Interface) error {
+func waveView(view def.Interface) error {
 	w := NewWriter()
 	// intro
 	waveIntroduction(w)
@@ -38,10 +49,10 @@ func waveViewImports(w Writer, imports []string) {
 	waveImports(w, imports)
 }
 
-func waveViewStruct(w Writer, table *def.Interface) {
-	waveModel(w, table)
+func waveViewStruct(w Writer, view def.Interface) {
+	waveModel(w, view)
 }
 
-func waveViewQueries(w Writer, table *def.Interface) {
-	waveQuery(w, table)
+func waveViewQueries(w Writer, view def.Interface) {
+	waveQuery(w, view)
 }

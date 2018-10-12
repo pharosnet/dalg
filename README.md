@@ -1,56 +1,61 @@
-# dalg
-一个Golang 的DATA ACCESS LAYER代码生成器.
-这是个粗陋的版本，下一个版会结合PHAROSNET/DALC进行重构优化。
+# Database access layer generator
+This is a dal(database access layer) code generator for Golang.
 
-特性：
+Features:
 
-- 使用代码生成的方式代替反射，这样在运行时的损耗相比小很多。
+- Using code generating instead of reflect way, so there is no reflect costs.
 
-- 对于查询，使用回调的方式减少了多余的循环次数。在通常类似的框架中，当查询某一个列表时，会返回一个Data List，而从rows转化成Data List的循环是被封装了的，往往之后的业务代码中，还会在循环Data List进行其他操作。而dalg是在从rows转化成Data List的循环中织入了函数体，这个函数体是执行业务逻辑代码的，那么就可以省去一个不必要的循环消耗。
-- 支持Mac，Windows（需要admin权限，且请关闭360这类东西，因为要取系统环境变量），Linux（待测）。
-- 支持额外第三方包类型，且会自动识别，但是要写全包名，如 `mapType="xx/xx.NullXxx"`。
-- 增加了NullTime类型。
+- In query function code, using function frame instead of directed returns. so we can write an O(n) costed code to achieve goals.
+- Supports Linux, Windows and Mac.
+- Supports customize type.
+- DDL 
 
-## 安装
+## Install
 
 ```
+// in your project
+go get -u github.com/pharosnet/dalc
+// install dalg program
 go get -u github.com/pharosnet/dalg
 ```
 
-## 使用
+## Usage
 
 ```
-dalg [描述文件] [输出目录]
+dalg [definition file, it is a xml type file] [generated code file dir]
 ```
 
-案例
+## Example:
+
+command: 
 
 ```
 dalg ./def.xml $GOPATH/src/project
 ```
 
- def.xml 指定了输出的包名，默认是dal，所以生成的代码在$GOPATH/src/project/dal中。
-
-描述文件是一个xml文件，根是db，db包含package（输出的包名）和dialect（方言，当前支持postgres），在db下只有interface节点，interface是描述对象的，也就是对应输出的struct。interface的属性有class（类别，可以有table，enum，json，view。table是表，会生成CRUD代码，enum和json是扩张类型，具体见下面案例，view是查询时图，不会生成CRUD代码），schema，name（表名），mapName（生成代码的名称）和type（数据库类型）。在xml中，以map开头的属性都是输出用，不带map的都是描述数据库用。
-
-注意，如果查询结果是计数类型时，类似count，那么按照逻辑，需要建立一个view类型的interface，因query的结果元类型为interface，且使用call back方式，所以query并不需要指定返回list还是one。
-
-def.xml的案例如下：
+def.xml: 
 
 ```xml
 <?xml version="1.0" encoding="UTF-8" ?>
 <db
-        package="dal"
-        dialect="postgres"
-        tablespace=""
-        owner=""
+        package="dal" // optional, default value is dal. go code package name, e.g.: $GOPATH/src/project/dal
+        dialect="postgres" // required, postgres, mysql, oracle
+        tablespace="" // postgres tablespace
+        owner="" // postgres owner
+    	ddl="true" // when true, it will generate ddl file.
         >
+    <!-- interface class can be table, view, enum and json -->
+    <!-- schema is optional -->
+    <!-- name is required when class is table, and it is table name  -->
+    <!-- mapName is required and uniqued, it is go struct name,  -->
     <interface class="table" schema="public" name="user" mapName="User" >
+        <!-- when class is table or view, column is required -->
         <column name="id" type="varchar(64)" mapName="Id" mapType="sql.NullString" pk="true" increment="false" />
         <column name="name" type="varchar(255)" mapName="Name" mapType="sql.NullString" />
         <column name="age" type="numeric(18)" mapName="Age" mapType="sql.NullInt64" />
         <column name="sex" type="boolean" mapName="Sex" mapType="Sex" />
         <column name="money" type="numeric(18,2)" mapName="Money" mapType="sql.NullFloat64" />
+        <!-- mapType can be interface mapName -->
         <column name="info" type="jsonb" mapName="Info" mapType="UserInfo" json="true" />
         <column name="create_by" type="varchar(255)" mapName="CreateBy" mapType="sql.NullString"  />
         <column name="create_time" type="timestamp" mapName="CreateTime" mapType="NullTime"  />
@@ -59,7 +64,7 @@ def.xml的案例如下：
         <column name="version" type="bigint" mapName="Version" mapType="sql.NullInt64" version="true" />
         <index name="name_age" type="btree" columns="name, age" sortOrder="desc" unique="false" ops=""/>
         <index name="create_time" type="btree" columns="create_time" sortOrder="desc" unique="false" ops=""/>
-        <query mapName="List" result="" > <!-- result 支持 one, list, int64, string, bool, float64, 默认为list -->
+        <query mapName="List" result="list" > <!-- result can be one, list, int64, string, bool, float64, default is list -->
             <arg mapName="limit" mapType="int64" />
             <arg mapName="offset" mapType="int64" />
             <sql>
@@ -72,16 +77,18 @@ def.xml的案例如下：
         </query>
     </interface>
     <interface class="json" mapName="UserInfo" >
+        <!-- when class is table or view, field is required -->
         <field mapName="Id" mapType="string" />
         <field mapName="Age" mapType="int64" />
     </interface>
     <interface class="enum" mapName="Sex" mapType="string" type="bool"  >
+        <!-- when class is table or view, option is required -->
         <option value="true" mapValue="MALE" default="true" />
         <option value="false" mapValue="FEMALE" />
     </interface>
     <interface class="view" mapName="UserCount">
     	<column name="count" type="numeric(18)" mapName="Count" mapType="sql.NullInt64" />
-        <query mapName="Normal" >
+        <query mapName="Normal" result="int64" >
             <arg mapName="limit" mapType="int64" />
             <arg mapName="offset" mapType="int64" />
             <sql>
@@ -97,10 +104,12 @@ def.xml的案例如下：
 </db>
 ```
 
+To see full example at the example folder.
+
 ### TODO
 
-- [ ] 支持mysql
-- [ ] 支持oracle
+- [ ] support mysql
+- [ ] support oracle
 - [x] 支持DDL
 
 ## License
