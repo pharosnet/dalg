@@ -92,11 +92,53 @@ func buildPostgresInsertSql(table def.Interface) (ql string, err error) {
 }
 
 func buildMysqlInsertSql(table def.Interface) (ql string, err error) {
-
+	bb := bytes.NewBuffer([]byte{})
+	bb.WriteString(fmt.Sprintf(`INSERT INTO %s (`, table.Name))
+	for i, col := range table.Columns {
+		if i == 0 {
+			bb.WriteString(strings.TrimSpace(col.Name) )
+		} else {
+			bb.WriteString(`, ` + strings.TrimSpace(col.Name))
+		}
+	}
+	bb.WriteString(`) VALUES (`)
+	colLen := len(table.Columns)
+	for i := 1; i <= colLen; i++ {
+		if i == 1 {
+			bb.WriteString("?")
+		} else {
+			bb.WriteString(", ?")
+		}
+	}
+	bb.WriteString(`)`)
+	ql = strings.TrimSpace(bb.String())
 	return
 }
 
 func buildOracleInsertSql(table def.Interface) (ql string, err error) {
-
+	bb := bytes.NewBuffer([]byte{})
+	if table.Schema != "" {
+		bb.WriteString(fmt.Sprintf(`INSERT INTO %s.%s (`, table.Schema, table.Name))
+	} else {
+		bb.WriteString(fmt.Sprintf(`INSERT INTO %s (`, table.Name))
+	}
+	for i, col := range table.Columns {
+		if i == 0 {
+			bb.WriteString(strings.TrimSpace(col.Name))
+		} else {
+			bb.WriteString(`, ` + strings.TrimSpace(col.Name))
+		}
+	}
+	bb.WriteString(`) VALUES (`)
+	colLen := len(table.Columns)
+	for i := 1; i <= colLen; i++ {
+		if i == 1 {
+			bb.WriteString(fmt.Sprintf(":%d", i))
+		} else {
+			bb.WriteString(fmt.Sprintf(", :%d", i))
+		}
+	}
+	bb.WriteString(`)`)
+	ql = strings.TrimSpace(bb.String())
 	return
 }
