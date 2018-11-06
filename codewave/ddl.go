@@ -144,9 +144,88 @@ func wavePostgresDDL(w Writer, tables []def.Interface) {
 }
 
 func waveMysqlDDL(w Writer, tables []def.Interface) {
+	for _, table := range tables {
+		table.Pks = make([]def.Column, 0, 1)
+		schema := strings.TrimSpace(table.Schema)
+		name := strings.ToUpper(strings.TrimSpace(table.Name))
+		if schema != "" {
+			w.WriteString(fmt.Sprintf("-- Table: `%s`.`%s`", schema, name))
+			w.WriteString("\n\n")
+			w.WriteString(fmt.Sprintf("DROP TABLE IF EXISTS `%s`.`%s`;", schema, name))
+			w.WriteString("\n\n")
+			w.WriteString(fmt.Sprintf("CREATE TABLE `%s`.`%s` (", schema, name))
+			w.WriteString("\n")
+		} else {
+			w.WriteString(fmt.Sprintf("-- Table: %s", name))
+			w.WriteString("\n\n")
+			w.WriteString(fmt.Sprintf("DROP TABLE IF EXISTS `%s`;", name))
+			w.WriteString("\n\n")
+			w.WriteString(fmt.Sprintf("CREATE TABLE `%s` (", name))
+			w.WriteString("\n")
+		}
+		for _, col := range table.Columns {
+			if col.Pk {
+				table.Pks = append(table.Pks, col)
+			}
+			w.WriteString(fmt.Sprintf("	`%s` %s ", strings.ToUpper(col.Name), col.Type))
+			if col.NotNull {
+				w.WriteString(` NOT NULL`)
+			}
+			if col.Default != "" {
+				if col.MapType == "string" || col.MapType == "sql.NullString" {
+					w.WriteString(fmt.Sprintf(` DEFAULT '%s'`, col.Default))
+				} else {
+					w.WriteString(fmt.Sprintf(` DEFAULT %s`, col.Default))
+				}
+			}
+			w.WriteString(", ")
+			w.WriteString("\n")
+		}
+		pks := ""
+		for _, key := range table.Pks {
+			pks = pks + "," + fmt.Sprintf("`%s`", strings.ToUpper(key.Name))
+		}
+		if len(pks) > 0 {
+			pks = pks[1:]
+			w.WriteString(fmt.Sprintf("PRIMARY KEY (%s)", pks))
+		}
+		if table.Indexes != nil && len(table.Indexes) > 0 {
+			w.WriteString(",")
+			w.WriteString("\n")
+			for indexIndex, index := range table.Indexes {
 
+				idxName := fmt.Sprintf(`%s_IDX_%s`, name, strings.ToUpper(strings.TrimSpace(index.Name)))
+				unique := ""
+				if index.Unique {
+					unique = "UNIQUE"
+				}
+				indexType := ""
+				if index.Type != "" {
+					indexType = fmt.Sprintf("USING %s", index.Type)
+				}
+				columns := strings.Split(index.Columns, ",")
+				colExp := ""
+				for i, col := range columns {
+					if i > 0 {
+						colExp = colExp + ", "
+					}
+					colExp = colExp + fmt.Sprintf("`%s`", strings.ToUpper(strings.TrimSpace(col)))
+				}
+				w.WriteString(fmt.Sprintf("%s KEY `%s` (%s) %s", unique, idxName, colExp, indexType))
+				if indexIndex + 1 < len(table.Indexes) {
+					w.WriteString(",")
+				}
+				w.WriteString("\n")
+			}
+		} else {
+			w.WriteString("\n")
+		}
+		w.WriteString(");")
+		w.WriteString("\n\n")
+	}
 }
 
 func waveOracleDDL(w Writer, tables []def.Interface) {
-
+	w.WriteString("-- not support")
+	// TODO 
 }
