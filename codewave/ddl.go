@@ -227,5 +227,5 @@ func waveMysqlDDL(w Writer, tables []def.Interface) {
 
 func waveOracleDDL(w Writer, tables []def.Interface) {
 	w.WriteString("-- not support")
-	// TODO 
+	// TODO
 }
