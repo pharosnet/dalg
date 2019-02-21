@@ -98,11 +98,45 @@ func buildPostgresGetOneSql(table def.Interface) (ql string, err error) {
 }
 
 func buildMysqlGetOneSql(table def.Interface) (ql string, err error) {
-
+	bb := bytes.NewBuffer([]byte{})
+	bb.WriteString(`SELECT `)
+	for i, col := range table.Columns {
+		if i > 0 {
+			bb.WriteString(", ")
+		}
+		bb.WriteString(fmt.Sprintf(`%s`, strings.TrimSpace(col.Name)))
+	}
+	bb.WriteString(fmt.Sprintf(` FROM %s WHERE `, table.Name))
+	for pi, pk := range table.Pks {
+		if pi > 0 {
+			bb.WriteString(` AND `)
+		}
+		bb.WriteString(fmt.Sprintf(`%s = ?`, strings.TrimSpace(pk.Name)))
+	}
+	ql = strings.TrimSpace(bb.String())
 	return
 }
 
 func buildOracleGetOneSql(table def.Interface) (ql string, err error) {
-
+	bb := bytes.NewBuffer([]byte{})
+	bb.WriteString(`SELECT `)
+	for i, col := range table.Columns {
+		if i > 0 {
+			bb.WriteString(", ")
+		}
+		bb.WriteString(fmt.Sprintf(`%s`, strings.TrimSpace(col.Name)))
+	}
+	if table.Schema != "" {
+		bb.WriteString(fmt.Sprintf(` FROM %s.%s WHERE `, table.Schema, table.Name))
+	} else {
+		bb.WriteString(fmt.Sprintf(` FROM %s WHERE `, table.Name))
+	}
+	for pi, pk := range table.Pks {
+		if pi > 0 {
+			bb.WriteString(` AND `)
+		}
+		bb.WriteString(fmt.Sprintf(`%s = :%d`, strings.TrimSpace(pk.Name), pi+1))
+	}
+	ql = strings.TrimSpace(bb.String())
 	return
 }

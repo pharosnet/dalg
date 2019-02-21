@@ -91,11 +91,41 @@ func buildPostgresDeleteSql(table def.Interface) (ql string, err error) {
 }
 
 func buildMysqlDeleteSql(table def.Interface) (ql string, err error) {
-
+	bb := bytes.NewBuffer([]byte{})
+	bb.WriteString(fmt.Sprintf(`DELETE FROM %s WHERE `, table.Name))
+	i := 1
+	for _, pk := range table.Pks {
+		if i > 1 {
+			bb.WriteString(" AND ")
+		}
+		bb.WriteString(fmt.Sprintf(`%s = ?`, strings.TrimSpace(pk.Name)))
+		i++
+	}
+	if table.Version.MapName != "" {
+		bb.WriteString(fmt.Sprintf(` AND %s = ?`, strings.TrimSpace(table.Version.Name)))
+	}
+	ql = strings.TrimSpace(bb.String())
 	return
 }
 
 func buildOracleDeleteSql(table def.Interface) (ql string, err error) {
-
+	bb := bytes.NewBuffer([]byte{})
+	if table.Schema != "" {
+		bb.WriteString(fmt.Sprintf(`DELETE FROM %s.%s WHERE `, table.Schema, table.Name))
+	} else {
+		bb.WriteString(fmt.Sprintf(`DELETE FROM %s WHERE `, table.Name))
+	}
+	i := 1
+	for _, pk := range table.Pks {
+		if i > 1 {
+			bb.WriteString(" AND ")
+		}
+		bb.WriteString(fmt.Sprintf(`%s = :%d`, strings.TrimSpace(pk.Name), i))
+		i++
+	}
+	if table.Version.MapName != "" {
+		bb.WriteString(fmt.Sprintf(` AND %s = :%d`, strings.TrimSpace(table.Version.Name), i))
+	}
+	ql = strings.TrimSpace(bb.String())
 	return
 }

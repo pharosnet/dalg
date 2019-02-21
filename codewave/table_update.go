@@ -74,9 +74,9 @@ func buildUpdateSql(table def.Interface) (ql string, err error) {
 func buildPostgresUpdateSql(table def.Interface) (ql string, err error) {
 	bb := bytes.NewBuffer([]byte{})
 	if table.Schema != "" {
-		bb.WriteString(fmt.Sprintf(`UPDATE "%s"."%s" SET`, table.Schema, table.Name))
+		bb.WriteString(fmt.Sprintf(`UPDATE "%s"."%s" SET `, table.Schema, table.Name))
 	} else {
-		bb.WriteString(fmt.Sprintf(`UPDATE "%s" SET`, table.Name))
+		bb.WriteString(fmt.Sprintf(`UPDATE "%s" SET `, table.Name))
 	}
 	i := 1
 	for _, col := range table.Columns {
@@ -111,11 +111,75 @@ func buildPostgresUpdateSql(table def.Interface) (ql string, err error) {
 }
 
 func buildMysqlUpdateSql(table def.Interface) (ql string, err error) {
-
+	bb := bytes.NewBuffer([]byte{})
+		bb.WriteString(fmt.Sprintf(`UPDATE %s SET `, table.Name))
+	i := 1
+	for _, col := range table.Columns {
+		if col.Pk {
+			continue
+		}
+		if i > 1 {
+			bb.WriteString(", ")
+		}
+		if col.Version {
+			if col.MapType == "int64" {
+				bb.WriteString(fmt.Sprintf(`%s = %s + 1`, strings.TrimSpace(col.Name), strings.TrimSpace(col.Name)))
+				continue
+			}
+		}
+		bb.WriteString(fmt.Sprintf(`%s = ?`, strings.TrimSpace(col.Name)))
+		i++
+	}
+	bb.WriteString(` WHERE `)
+	for pi, pk := range table.Pks {
+		if pi > 0 {
+			bb.WriteString(` AND `)
+		}
+		bb.WriteString(fmt.Sprintf(`%s = ?`, strings.TrimSpace(pk.Name)))
+		i++
+	}
+	if table.Version.MapName != "" {
+		bb.WriteString(fmt.Sprintf(` AND %s = ? `, table.Version.Name))
+	}
+	ql = strings.TrimSpace(bb.String())
 	return
 }
 
 func buildOracleUpdateSql(table def.Interface) (ql string, err error) {
-
+	bb := bytes.NewBuffer([]byte{})
+	if table.Schema != "" {
+		bb.WriteString(fmt.Sprintf(`UPDATE %s.%s SET `, table.Schema, table.Name))
+	} else {
+		bb.WriteString(fmt.Sprintf(`UPDATE %s SET `, table.Name))
+	}
+	i := 1
+	for _, col := range table.Columns {
+		if col.Pk {
+			continue
+		}
+		if i > 1 {
+			bb.WriteString(", ")
+		}
+		if col.Version {
+			if col.MapType == "int64" {
+				bb.WriteString(fmt.Sprintf(`%s = %s + 1`, strings.TrimSpace(col.Name), strings.TrimSpace(col.Name)))
+				continue
+			}
+		}
+		bb.WriteString(fmt.Sprintf(`%s = :%d`, strings.TrimSpace(col.Name), i))
+		i++
+	}
+	bb.WriteString(` WHERE `)
+	for pi, pk := range table.Pks {
+		if pi > 0 {
+			bb.WriteString(` AND `)
+		}
+		bb.WriteString(fmt.Sprintf(`%s = :%d`, strings.TrimSpace(pk.Name), i))
+		i++
+	}
+	if table.Version.MapName != "" {
+		bb.WriteString(fmt.Sprintf(` AND %s = :%d `, table.Version.Name, i))
+	}
+	ql = strings.TrimSpace(bb.String())
 	return
 }
