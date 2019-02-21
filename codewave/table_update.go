@@ -74,9 +74,9 @@ func buildUpdateSql(table def.Interface) (ql string, err error) {
 func buildPostgresUpdateSql(table def.Interface) (ql string, err error) {
 	bb := bytes.NewBuffer([]byte{})
 	if table.Schema != "" {
-		bb.WriteString(fmt.Sprintf(`UPDATE "%s"."%s" SET`, table.Schema, table.Name))
+		bb.WriteString(fmt.Sprintf(`UPDATE "%s"."%s" SET `, table.Schema, table.Name))
 	} else {
-		bb.WriteString(fmt.Sprintf(`UPDATE "%s" SET`, table.Name))
+		bb.WriteString(fmt.Sprintf(`UPDATE "%s" SET `, table.Name))
 	}
 	i := 1
 	for _, col := range table.Columns {
@@ -112,7 +112,7 @@ func buildPostgresUpdateSql(table def.Interface) (ql string, err error) {
 
 func buildMysqlUpdateSql(table def.Interface) (ql string, err error) {
 	bb := bytes.NewBuffer([]byte{})
-		bb.WriteString(fmt.Sprintf(`UPDATE %s SET`, table.Name))
+		bb.WriteString(fmt.Sprintf(`UPDATE %s SET `, table.Name))
 	i := 1
 	for _, col := range table.Columns {
 		if col.Pk {
@@ -148,9 +148,9 @@ func buildMysqlUpdateSql(table def.Interface) (ql string, err error) {
 func buildOracleUpdateSql(table def.Interface) (ql string, err error) {
 	bb := bytes.NewBuffer([]byte{})
 	if table.Schema != "" {
-		bb.WriteString(fmt.Sprintf(`UPDATE %s.%s SET`, table.Schema, table.Name))
+		bb.WriteString(fmt.Sprintf(`UPDATE %s.%s SET `, table.Schema, table.Name))
 	} else {
-		bb.WriteString(fmt.Sprintf(`UPDATE %s SET`, table.Name))
+		bb.WriteString(fmt.Sprintf(`UPDATE %s SET `, table.Name))
 	}
 	i := 1
 	for _, col := range table.Columns {
